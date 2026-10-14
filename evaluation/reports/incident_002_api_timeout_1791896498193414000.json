@@ -1,0 +1,274 @@
+{
+  "model": "gemma3:4b",
+  "raw_model_report": {
+    "observed_failure": [
+      {
+        "statement": "The mobility_api_to_raw pipeline failed due to API request timeouts during the extract stage. Specifically, the extract stage experienced three timeout failures with the error code API_REQUEST_TIMEOUT.",
+        "citations": [
+          "data/sample_logs/incident_002_api_timeout.log:L3",
+          "data/sample_logs/incident_002_api_timeout.log:L4",
+          "data/sample_logs/incident_002_api_timeout.log:L5"
+        ]
+      }
+    ],
+    "pipeline_impact": [
+      {
+        "statement": "The extract, validate, transform, and load stages were skipped due to the extract stage failing. The load stage also reported output_written as false.",
+        "citations": [
+          "data/sample_logs/incident_002_api_timeout.log:L6",
+          "data/sample_logs/incident_002_api_timeout.log:L7",
+          "data/sample_logs/incident_002_api_timeout.log:L8"
+        ]
+      }
+    ],
+    "root_cause_status": [
+      {
+        "statement": "The underlying cause of the API request timeouts remains unconfirmed. The runbook emphasizes that timeouts describe an observed failure, not a confirmed underlying cause, and does not establish the reason for the timeouts.",
+        "citations": [
+          "knowledge_base/runbooks/api_request_timeout.md:L33-L41",
+          "knowledge_base/runbooks/api_request_timeout.md:L59-L64"
+        ]
+      }
+    ],
+    "troubleshooting": [
+      {
+        "statement": "To investigate the root cause, the runbook recommends confirming the endpoint, timeout setting, and number of attempts, checking for HTTP status or response body, and reviewing connectivity diagnostics from the pipeline execution environment.",
+        "citations": [
+          "knowledge_base/runbooks/api_request_timeout.md:L13-L21",
+          "knowledge_base/runbooks/api_request_timeout.md:L33-L41"
+        ]
+      }
+    ],
+    "additional_evidence": [
+      {
+        "statement": "Further investigation should include examining the upstream service health information for the incident time to determine if the external service was experiencing issues.",
+        "citations": [
+          "knowledge_base/runbooks/api_request_timeout.md:L13-L21"
+        ]
+      }
+    ]
+  },
+  "extracted_facts": {
+    "source": "data/sample_logs/incident_002_api_timeout.log",
+    "explicit_errors": [
+      {
+        "fields": {
+          "stage": "extract",
+          "attempt": 1,
+          "error_code": "API_REQUEST_TIMEOUT",
+          "message": "Request timed out before a response was received."
+        },
+        "citation": "data/sample_logs/incident_002_api_timeout.log:L3"
+      },
+      {
+        "fields": {
+          "stage": "extract",
+          "attempt": 2,
+          "error_code": "API_REQUEST_TIMEOUT",
+          "message": "Request timed out before a response was received."
+        },
+        "citation": "data/sample_logs/incident_002_api_timeout.log:L4"
+      },
+      {
+        "fields": {
+          "stage": "extract",
+          "attempt": 3,
+          "error_code": "API_REQUEST_TIMEOUT",
+          "message": "Final request attempt timed out. No response body was received."
+        },
+        "citation": "data/sample_logs/incident_002_api_timeout.log:L5"
+      }
+    ],
+    "schema_evidence": [],
+    "pipeline_events": [
+      {
+        "fields": {
+          "stage": "extract",
+          "attempt": 1,
+          "error_code": "API_REQUEST_TIMEOUT",
+          "message": "Request timed out before a response was received."
+        },
+        "citation": "data/sample_logs/incident_002_api_timeout.log:L3"
+      },
+      {
+        "fields": {
+          "stage": "extract",
+          "attempt": 2,
+          "error_code": "API_REQUEST_TIMEOUT",
+          "message": "Request timed out before a response was received."
+        },
+        "citation": "data/sample_logs/incident_002_api_timeout.log:L4"
+      },
+      {
+        "fields": {
+          "stage": "extract",
+          "attempt": 3,
+          "error_code": "API_REQUEST_TIMEOUT",
+          "message": "Final request attempt timed out. No response body was received."
+        },
+        "citation": "data/sample_logs/incident_002_api_timeout.log:L5"
+      },
+      {
+        "fields": {
+          "stage": "validate",
+          "status": "SKIPPED"
+        },
+        "citation": "data/sample_logs/incident_002_api_timeout.log:L6"
+      },
+      {
+        "fields": {
+          "stage": "transform",
+          "status": "SKIPPED"
+        },
+        "citation": "data/sample_logs/incident_002_api_timeout.log:L7"
+      },
+      {
+        "fields": {
+          "stage": "load",
+          "status": "SKIPPED",
+          "output_written": false
+        },
+        "citation": "data/sample_logs/incident_002_api_timeout.log:L8"
+      },
+      {
+        "fields": {
+          "pipeline_status": "FAILED",
+          "incident_id": "INC-002",
+          "run_id": "demo_002"
+        },
+        "citation": "data/sample_logs/incident_002_api_timeout.log:L9"
+      }
+    ],
+    "underlying_cause_verification": "NOT_PERFORMED"
+  },
+  "section_provenance": {
+    "observed_failure": "deterministic_log_extraction",
+    "pipeline_impact": "deterministic_log_extraction",
+    "root_cause_status": "model_generated",
+    "troubleshooting": "model_generated",
+    "additional_evidence": "model_generated"
+  },
+  "incident_source": "data/sample_logs/incident_002_api_timeout.log",
+  "response_seconds": 26.23,
+  "report": "{\n  \"observed_failure\": [\n    {\n      \"statement\": \"Recorded error: API_REQUEST_TIMEOUT. Recorded stage: extract.\",\n      \"citations\": [\n        \"data/sample_logs/incident_002_api_timeout.log:L3\"\n      ]\n    },\n    {\n      \"statement\": \"Recorded error: API_REQUEST_TIMEOUT. Recorded stage: extract.\",\n      \"citations\": [\n        \"data/sample_logs/incident_002_api_timeout.log:L4\"\n      ]\n    },\n    {\n      \"statement\": \"Recorded error: API_REQUEST_TIMEOUT. Recorded stage: extract.\",\n      \"citations\": [\n        \"data/sample_logs/incident_002_api_timeout.log:L5\"\n      ]\n    }\n  ],\n  \"pipeline_impact\": [\n    {\n      \"statement\": \"Log message: \\\"Request timed out before a response was received.\\\"\",\n      \"citations\": [\n        \"data/sample_logs/incident_002_api_timeout.log:L3\"\n      ]\n    },\n    {\n      \"statement\": \"Log message: \\\"Request timed out before a response was received.\\\"\",\n      \"citations\": [\n        \"data/sample_logs/incident_002_api_timeout.log:L4\"\n      ]\n    },\n    {\n      \"statement\": \"Log message: \\\"Final request attempt timed out. No response body was received.\\\"\",\n      \"citations\": [\n        \"data/sample_logs/incident_002_api_timeout.log:L5\"\n      ]\n    },\n    {\n      \"statement\": \"Recorded status for stage 'validate': SKIPPED.\",\n      \"citations\": [\n        \"data/sample_logs/incident_002_api_timeout.log:L6\"\n      ]\n    },\n    {\n      \"statement\": \"Recorded status for stage 'transform': SKIPPED.\",\n      \"citations\": [\n        \"data/sample_logs/incident_002_api_timeout.log:L7\"\n      ]\n    },\n    {\n      \"statement\": \"Recorded status for stage 'load': SKIPPED.\",\n      \"citations\": [\n        \"data/sample_logs/incident_002_api_timeout.log:L8\"\n      ]\n    },\n    {\n      \"statement\": \"Recorded output_written: false.\",\n      \"citations\": [\n        \"data/sample_logs/incident_002_api_timeout.log:L8\"\n      ]\n    },\n    {\n      \"statement\": \"Recorded pipeline status: FAILED.\",\n      \"citations\": [\n        \"data/sample_logs/incident_002_api_timeout.log:L9\"\n      ]\n    }\n  ],\n  \"root_cause_status\": [\n    {\n      \"statement\": \"The underlying cause of the API request timeouts remains unconfirmed. The runbook emphasizes that timeouts describe an observed failure, not a confirmed underlying cause, and does not establish the reason for the timeouts.\",\n      \"citations\": [\n        \"knowledge_base/runbooks/api_request_timeout.md:L33-L41\",\n        \"knowledge_base/runbooks/api_request_timeout.md:L59-L64\"\n      ]\n    }\n  ],\n  \"troubleshooting\": [\n    {\n      \"statement\": \"To investigate the root cause, the runbook recommends confirming the endpoint, timeout setting, and number of attempts, checking for HTTP status or response body, and reviewing connectivity diagnostics from the pipeline execution environment.\",\n      \"citations\": [\n        \"knowledge_base/runbooks/api_request_timeout.md:L13-L21\",\n        \"knowledge_base/runbooks/api_request_timeout.md:L33-L41\"\n      ]\n    }\n  ],\n  \"additional_evidence\": [\n    {\n      \"statement\": \"Further investigation should include examining the upstream service health information for the incident time to determine if the external service was experiencing issues.\",\n      \"citations\": [\n        \"knowledge_base/runbooks/api_request_timeout.md:L13-L21\"\n      ]\n    }\n  ]\n}",
+  "log_evidence": {
+    "source": "data/sample_logs/incident_002_api_timeout.log",
+    "lines": [
+      {
+        "line_number": 1,
+        "text": "2026-10-13T07:00:00Z INFO incident_id=INC-002 pipeline=mobility_api_to_raw run_id=demo_002"
+      },
+      {
+        "line_number": 2,
+        "text": "2026-10-13T07:00:01Z INFO stage=extract source=https://example.invalid/vehicles request_timeout_seconds=30 max_attempts=3"
+      },
+      {
+        "line_number": 3,
+        "text": "2026-10-13T07:00:31Z WARNING stage=extract attempt=1 error_code=API_REQUEST_TIMEOUT message=\"Request timed out before a response was received.\""
+      },
+      {
+        "line_number": 4,
+        "text": "2026-10-13T07:01:06Z WARNING stage=extract attempt=2 error_code=API_REQUEST_TIMEOUT message=\"Request timed out before a response was received.\""
+      },
+      {
+        "line_number": 5,
+        "text": "2026-10-13T07:01:46Z ERROR stage=extract attempt=3 error_code=API_REQUEST_TIMEOUT message=\"Final request attempt timed out. No response body was received.\""
+      },
+      {
+        "line_number": 6,
+        "text": "2026-10-13T07:01:46Z INFO stage=validate status=SKIPPED"
+      },
+      {
+        "line_number": 7,
+        "text": "2026-10-13T07:01:46Z INFO stage=transform status=SKIPPED"
+      },
+      {
+        "line_number": 8,
+        "text": "2026-10-13T07:01:46Z INFO stage=load status=SKIPPED output_written=false"
+      },
+      {
+        "line_number": 9,
+        "text": "2026-10-13T07:01:47Z ERROR pipeline_status=FAILED incident_id=INC-002 run_id=demo_002"
+      }
+    ]
+  },
+  "retrieved_passages": [
+    {
+      "chunk_id": "knowledge_base/runbooks/api_request_timeout.md#L1-L7",
+      "source": "knowledge_base/runbooks/api_request_timeout.md",
+      "heading": "Document overview",
+      "start_line": 1,
+      "end_line": 7,
+      "text": "# Runbook: API Request Timeout\n\nRunbook ID: RB-002\nVersion: 1.0\nSource type: Project-authored troubleshooting guide\nApplicable error: API_REQUEST_TIMEOUT\n",
+      "score": 0.408248290463863,
+      "matched_terms": [
+        "api",
+        "request",
+        "timeout"
+      ]
+    },
+    {
+      "chunk_id": "knowledge_base/runbooks/api_request_timeout.md#L8-L12",
+      "source": "knowledge_base/runbooks/api_request_timeout.md",
+      "heading": "Symptoms",
+      "start_line": 8,
+      "end_line": 12,
+      "text": "## Symptoms\n\nAn extraction request exceeds its configured timeout before receiving\na response. Repeated timeouts may exhaust the configured attempts.\n",
+      "score": 0.2721655269759087,
+      "matched_terms": [
+        "request",
+        "timeout"
+      ]
+    },
+    {
+      "chunk_id": "knowledge_base/runbooks/api_request_timeout.md#L13-L21",
+      "source": "knowledge_base/runbooks/api_request_timeout.md",
+      "heading": "Evidence to inspect",
+      "start_line": 13,
+      "end_line": 21,
+      "text": "## Evidence to inspect\n\n- The endpoint, timeout setting, attempt count, and timestamps.\n- Whether any HTTP status or response body was received.\n- Request parameters and expected response size.\n- Connectivity diagnostics from the pipeline execution environment.\n- Proxy configuration and relevant connection logs.\n- Upstream service health information for the incident time.\n",
+      "score": 0.1781741612749496,
+      "matched_terms": [
+        "request",
+        "timeout"
+      ]
+    },
+    {
+      "chunk_id": "knowledge_base/runbooks/api_request_timeout.md#L33-L41",
+      "source": "knowledge_base/runbooks/api_request_timeout.md",
+      "heading": "Troubleshooting steps",
+      "start_line": 33,
+      "end_line": 41,
+      "text": "## Troubleshooting steps\n\n1. Confirm the endpoint, configured timeout, and number of attempts.\n2. Check whether the client received an HTTP status or response body.\n3. Check connectivity and proxy diagnostics from the execution environment.\n4. Review upstream service health information for the incident time.\n5. Compare the failed request with a previously successful request.\n6. Inspect request parameters and expected response size.\n"
+    },
+    {
+      "chunk_id": "knowledge_base/runbooks/api_request_timeout.md#L59-L64",
+      "source": "knowledge_base/runbooks/api_request_timeout.md",
+      "heading": "Limits",
+      "start_line": 59,
+      "end_line": 64,
+      "text": "## Limits\n\nTimeouts describe an observed failure, not a confirmed underlying cause.\nDo not infer rate limiting without HTTP status or other supporting evidence.\nDo not infer an empty API dataset when no response body was received.\nThis runbook does not establish what caused a specific incident."
+    }
+  ],
+  "allowed_citations": [
+    "data/sample_logs/incident_002_api_timeout.log:L1",
+    "data/sample_logs/incident_002_api_timeout.log:L2",
+    "data/sample_logs/incident_002_api_timeout.log:L3",
+    "data/sample_logs/incident_002_api_timeout.log:L4",
+    "data/sample_logs/incident_002_api_timeout.log:L5",
+    "data/sample_logs/incident_002_api_timeout.log:L6",
+    "data/sample_logs/incident_002_api_timeout.log:L7",
+    "data/sample_logs/incident_002_api_timeout.log:L8",
+    "data/sample_logs/incident_002_api_timeout.log:L9",
+    "knowledge_base/runbooks/api_request_timeout.md:L1-L7",
+    "knowledge_base/runbooks/api_request_timeout.md:L13-L21",
+    "knowledge_base/runbooks/api_request_timeout.md:L33-L41",
+    "knowledge_base/runbooks/api_request_timeout.md:L59-L64",
+    "knowledge_base/runbooks/api_request_timeout.md:L8-L12"
+  ],
+  "citation_count": 16,
+  "citation_label_validity": 1.0,
+  "invalid_citations": [],
+  "citation_check_passed": true,
+  "semantic_review_status": "pending"
+}

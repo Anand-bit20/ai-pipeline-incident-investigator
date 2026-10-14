@@ -1,0 +1,33 @@
+{
+  "case_id": "INC-001",
+  "incident_source": "data/sample_logs/incident_001_missing_trip_id.log",
+  "expected_facts": {
+    "error_code": "SCHEMA_MISSING_COLUMN",
+    "failure_stage": "validate",
+    "missing_columns": ["trip_id"],
+    "pipeline_status": "FAILED",
+    "transformation_status": "NOT_STARTED",
+    "load_status": "SKIPPED",
+    "output_written": false,
+    "underlying_cause": "UNCONFIRMED"
+  },
+  "supporting_log_lines": {
+    "schema_failure": [6],
+    "transformation_not_started": [7],
+    "load_skipped_and_no_output": [8],
+    "pipeline_failed": [9],
+    "input_filename": [2]
+  },
+  "troubleshooting_reference": {
+    "source": "knowledge_base/runbooks/schema_missing_column.md",
+    "start_line": 30,
+    "end_line": 37
+  },
+  "review_requirements": [
+    "Identify the missing trip_id column and validate stage.",
+    "Distinguish pipeline failure from the skipped load stage.",
+    "State that the underlying reason for the missing column is unconfirmed.",
+    "Support troubleshooting and evidence requests with relevant runbook passages.",
+    "Do not invent facts or claim recovery succeeded."
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "case_id": "INC-002",
+  "incident_source": "data/sample_logs/incident_002_api_timeout.log",
+  "expected_facts": {
+    "error_code": "API_REQUEST_TIMEOUT",
+    "failure_stage": "extract",
+    "attempts_observed": [1, 2, 3],
+    "pipeline_status": "FAILED",
+    "validation_status": "SKIPPED",
+    "transformation_status": "SKIPPED",
+    "load_status": "SKIPPED",
+    "output_written": false,
+    "underlying_cause": "UNCONFIRMED"
+  },
+  "supporting_log_lines": {
+    "timeout_attempts": [3, 4, 5],
+    "validation_skipped": [6],
+    "transformation_skipped": [7],
+    "load_skipped_and_no_output": [8],
+    "pipeline_failed": [9]
+  },
+  "troubleshooting_reference": {
+    "source": "knowledge_base/runbooks/api_request_timeout.md",
+    "start_line": 33,
+    "end_line": 41
+  },
+  "review_requirements": [
+    "Identify API_REQUEST_TIMEOUT during extraction.",
+    "Correctly describe skipped downstream stages and no output.",
+    "Keep the underlying cause unconfirmed.",
+    "Support troubleshooting with relevant runbook evidence.",
+    "Support additional-evidence requests with relevant citations."
+  ]
+}

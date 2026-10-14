@@ -1,0 +1,130 @@
+[
+  {
+    "chunk_id": "knowledge_base/runbooks/api_request_timeout.md#L1-L7",
+    "source": "knowledge_base/runbooks/api_request_timeout.md",
+    "heading": "Document overview",
+    "start_line": 1,
+    "end_line": 7,
+    "text": "# Runbook: API Request Timeout\n\nRunbook ID: RB-002\nVersion: 1.0\nSource type: Project-authored troubleshooting guide\nApplicable error: API_REQUEST_TIMEOUT\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/api_request_timeout.md#L8-L12",
+    "source": "knowledge_base/runbooks/api_request_timeout.md",
+    "heading": "Symptoms",
+    "start_line": 8,
+    "end_line": 12,
+    "text": "## Symptoms\n\nAn extraction request exceeds its configured timeout before receiving\na response. Repeated timeouts may exhaust the configured attempts.\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/api_request_timeout.md#L13-L21",
+    "source": "knowledge_base/runbooks/api_request_timeout.md",
+    "heading": "Evidence to inspect",
+    "start_line": 13,
+    "end_line": 21,
+    "text": "## Evidence to inspect\n\n- The endpoint, timeout setting, attempt count, and timestamps.\n- Whether any HTTP status or response body was received.\n- Request parameters and expected response size.\n- Connectivity diagnostics from the pipeline execution environment.\n- Proxy configuration and relevant connection logs.\n- Upstream service health information for the incident time.\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/api_request_timeout.md#L22-L32",
+    "source": "knowledge_base/runbooks/api_request_timeout.md",
+    "heading": "Possible causes",
+    "start_line": 22,
+    "end_line": 32,
+    "text": "## Possible causes\n\nThese are hypotheses until supported by additional evidence:\n\n- The upstream service responded too slowly or was unavailable.\n- A network or proxy issue prevented a timely response.\n- The request required more processing time than the configured timeout.\n- The request parameters produced an unexpectedly expensive operation.\n\nA timeout alone does not establish any of these causes.\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/api_request_timeout.md#L33-L41",
+    "source": "knowledge_base/runbooks/api_request_timeout.md",
+    "heading": "Troubleshooting steps",
+    "start_line": 33,
+    "end_line": 41,
+    "text": "## Troubleshooting steps\n\n1. Confirm the endpoint, configured timeout, and number of attempts.\n2. Check whether the client received an HTTP status or response body.\n3. Check connectivity and proxy diagnostics from the execution environment.\n4. Review upstream service health information for the incident time.\n5. Compare the failed request with a previously successful request.\n6. Inspect request parameters and expected response size.\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/api_request_timeout.md#L42-L51",
+    "source": "knowledge_base/runbooks/api_request_timeout.md",
+    "heading": "Recovery",
+    "start_line": 42,
+    "end_line": 51,
+    "text": "## Recovery\n\n- Correct connectivity or proxy configuration if diagnostics identify an issue.\n- If the upstream service was unavailable, retry after recovery is confirmed.\n- If the request is too expensive, consider supported pagination or filtering.\n- Adjust the timeout only when measured response times justify the change.\n- Use bounded retries with backoff; avoid retrying indefinitely.\n- Before rerunning, check whether partial outputs exist and whether\n  repeated processing could create duplicates.\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/api_request_timeout.md#L52-L58",
+    "source": "knowledge_base/runbooks/api_request_timeout.md",
+    "heading": "Verification",
+    "start_line": 52,
+    "end_line": 58,
+    "text": "## Verification\n\n1. Confirm that a subsequent request returns a usable response.\n2. Confirm that response validation and downstream stages complete.\n3. Confirm that the expected output was written.\n4. Check for duplicate or partial outputs after the rerun.\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/api_request_timeout.md#L59-L64",
+    "source": "knowledge_base/runbooks/api_request_timeout.md",
+    "heading": "Limits",
+    "start_line": 59,
+    "end_line": 64,
+    "text": "## Limits\n\nTimeouts describe an observed failure, not a confirmed underlying cause.\nDo not infer rate limiting without HTTP status or other supporting evidence.\nDo not infer an empty API dataset when no response body was received.\nThis runbook does not establish what caused a specific incident."
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/schema_missing_column.md#L1-L7",
+    "source": "knowledge_base/runbooks/schema_missing_column.md",
+    "heading": "Document overview",
+    "start_line": 1,
+    "end_line": 7,
+    "text": "# Runbook: Required Column Missing\n\nRunbook ID: RB-001\nVersion: 1.0\nSource type: Project-authored troubleshooting guide\nApplicable error: SCHEMA_MISSING_COLUMN\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/schema_missing_column.md#L8-L12",
+    "source": "knowledge_base/runbooks/schema_missing_column.md",
+    "heading": "Symptoms",
+    "start_line": 8,
+    "end_line": 12,
+    "text": "## Symptoms\n\nInput schema validation reports that one or more required columns\nare absent. The pipeline may stop before transformation and loading.\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/schema_missing_column.md#L13-L19",
+    "source": "knowledge_base/runbooks/schema_missing_column.md",
+    "heading": "Evidence to inspect",
+    "start_line": 13,
+    "end_line": 19,
+    "text": "## Evidence to inspect\n\n- Required columns and observed columns recorded in the incident log.\n- The header of the exact input file used by the failed run.\n- Extraction code and field mappings.\n- The upstream schema and recent changes to it.\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/schema_missing_column.md#L20-L29",
+    "source": "knowledge_base/runbooks/schema_missing_column.md",
+    "heading": "Possible causes",
+    "start_line": 20,
+    "end_line": 29,
+    "text": "## Possible causes\n\nThese are hypotheses until supported by additional evidence:\n\n- The extraction code omitted a required field.\n- An upstream field was renamed or removed.\n- The pipeline read an unexpected input file.\n- A delimiter, encoding, or header-parsing issue changed column names.\n- Leading or trailing whitespace caused a column-name mismatch.\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/schema_missing_column.md#L30-L37",
+    "source": "knowledge_base/runbooks/schema_missing_column.md",
+    "heading": "Troubleshooting steps",
+    "start_line": 30,
+    "end_line": 37,
+    "text": "## Troubleshooting steps\n\n1. Compare the logged required columns with the observed columns.\n2. Inspect the header of the exact input file referenced in the log.\n3. Check column names for whitespace, spelling, and case differences.\n4. Compare extraction mappings with the expected input schema.\n5. Check upstream schema changes and confirm the correct file was read.\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/schema_missing_column.md#L38-L50",
+    "source": "knowledge_base/runbooks/schema_missing_column.md",
+    "heading": "Recovery",
+    "start_line": 38,
+    "end_line": 50,
+    "text": "## Recovery\n\n- If extraction omitted the field, correct the mapping and regenerate\n  the input from its original source.\n- If a field was renamed, confirm that its meaning is equivalent\n  before updating the mapping.\n- If parsing caused the mismatch, correct the parser configuration.\n- If the wrong file was read, correct the input selection.\n\nDo not fabricate trip_id values or silently remove the validation rule.\nIf the upstream source cannot supply a required field, review the\nschema contract before changing the pipeline.\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/schema_missing_column.md#L51-L57",
+    "source": "knowledge_base/runbooks/schema_missing_column.md",
+    "heading": "Verification",
+    "start_line": 51,
+    "end_line": 57,
+    "text": "## Verification\n\n1. Run schema validation again and confirm all required columns exist.\n2. Check that trip_id values meet the pipeline's documented value rules.\n3. Confirm transformation and loading complete successfully.\n4. Confirm the expected output was written for the new run.\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/schema_missing_column.md#L58-L62",
+    "source": "knowledge_base/runbooks/schema_missing_column.md",
+    "heading": "Limits",
+    "start_line": 58,
+    "end_line": 62,
+    "text": "## Limits\n\nThis runbook describes possible causes and recommended checks.\nIt does not establish the root cause of any specific incident.\nUse incident evidence to support conclusions."
+  }
+]

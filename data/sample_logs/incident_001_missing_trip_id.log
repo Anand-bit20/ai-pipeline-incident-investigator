@@ -1,0 +1,9 @@
+2026-10-13T06:00:00Z INFO incident_id=INC-001 pipeline=mobility_raw_to_silver run_id=demo_001
+2026-10-13T06:00:01Z INFO stage=extract source=raw/vehicle_positions_demo.csv
+2026-10-13T06:00:02Z INFO stage=extract rows_loaded=547
+2026-10-13T06:00:02Z INFO stage=validate required_columns=["vehicle_id","trip_id","route_id","latitude","longitude","timestamp"]
+2026-10-13T06:00:02Z INFO stage=validate observed_columns=["vehicle_id","route_id","latitude","longitude","timestamp"]
+2026-10-13T06:00:03Z ERROR stage=validate error_code=SCHEMA_MISSING_COLUMN missing_columns=["trip_id"]
+2026-10-13T06:00:03Z ERROR stage=validate message="Input schema validation failed. Transformation was not started."
+2026-10-13T06:00:03Z INFO stage=load status=SKIPPED output_written=false
+2026-10-13T06:00:04Z ERROR pipeline_status=FAILED incident_id=INC-001 run_id=demo_001

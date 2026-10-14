@@ -1,0 +1,107 @@
+{
+  "model": "gemma3:4b",
+  "incident_source": "data/sample_logs/incident_001_missing_trip_id.log",
+  "response_seconds": 21.07,
+  "report": "{\n  \"findings\": [\n    {\n      \"section\": \"pipeline_impact\",\n      \"statement\": \"The mobility_raw_to_silver pipeline failed due to a schema validation error.\",\n      \"citations\": [\n        \"data/sample_logs/incident_001_missing_trip_id.log:L9\"\n      ]\n    },\n    {\n      \"section\": \"root_cause_status\",\n      \"statement\": \"The underlying cause of the schema validation failure remains unconfirmed.\",\n      \"citations\": [\n        \"data/sample_logs/incident_001_missing_trip_id.log:L7\"\n      ]\n    },\n    {\n      \"section\": \"troubleshooting\",\n      \"statement\": \"The validation stage identified the missing column 'trip_id' in the input data.\",\n      \"citations\": [\n        \"data/sample_logs/incident_001_missing_trip_id.log:L6\",\n        \"data/sample_logs/incident_001_missing_trip_id.log:L5\"\n      ]\n    },\n    {\n      \"section\": \"troubleshooting\",\n      \"statement\": \"The runbook recommends comparing the logged required columns with the observed columns, inspecting the input file header, and checking for whitespace, spelling, and case differences.\",\n      \"citations\": [\n        \"knowledge_base/runbooks/schema_missing_column.md:L30-L37\"\n      ]\n    },\n    {\n      \"section\": \"pipeline_impact\",\n      \"statement\": \"The load stage was skipped after the validation stage failed.\",\n      \"citations\": [\n        \"data/sample_logs/incident_001_missing_trip_id.log:L8\"\n      ]\n    }\n  ]\n}",
+  "log_evidence": {
+    "source": "data/sample_logs/incident_001_missing_trip_id.log",
+    "lines": [
+      {
+        "line_number": 1,
+        "text": "2026-10-13T06:00:00Z INFO incident_id=INC-001 pipeline=mobility_raw_to_silver run_id=demo_001"
+      },
+      {
+        "line_number": 2,
+        "text": "2026-10-13T06:00:01Z INFO stage=extract source=raw/vehicle_positions_demo.csv"
+      },
+      {
+        "line_number": 3,
+        "text": "2026-10-13T06:00:02Z INFO stage=extract rows_loaded=547"
+      },
+      {
+        "line_number": 4,
+        "text": "2026-10-13T06:00:02Z INFO stage=validate required_columns=[\"vehicle_id\",\"trip_id\",\"route_id\",\"latitude\",\"longitude\",\"timestamp\"]"
+      },
+      {
+        "line_number": 5,
+        "text": "2026-10-13T06:00:02Z INFO stage=validate observed_columns=[\"vehicle_id\",\"route_id\",\"latitude\",\"longitude\",\"timestamp\"]"
+      },
+      {
+        "line_number": 6,
+        "text": "2026-10-13T06:00:03Z ERROR stage=validate error_code=SCHEMA_MISSING_COLUMN missing_columns=[\"trip_id\"]"
+      },
+      {
+        "line_number": 7,
+        "text": "2026-10-13T06:00:03Z ERROR stage=validate message=\"Input schema validation failed. Transformation was not started.\""
+      },
+      {
+        "line_number": 8,
+        "text": "2026-10-13T06:00:03Z INFO stage=load status=SKIPPED output_written=false"
+      },
+      {
+        "line_number": 9,
+        "text": "2026-10-13T06:00:04Z ERROR pipeline_status=FAILED incident_id=INC-001 run_id=demo_001"
+      }
+    ]
+  },
+  "retrieved_passages": [
+    {
+      "chunk_id": "knowledge_base/runbooks/schema_missing_column.md#L1-L7",
+      "source": "knowledge_base/runbooks/schema_missing_column.md",
+      "heading": "Document overview",
+      "start_line": 1,
+      "end_line": 7,
+      "text": "# Runbook: Required Column Missing\n\nRunbook ID: RB-001\nVersion: 1.0\nSource type: Project-authored troubleshooting guide\nApplicable error: SCHEMA_MISSING_COLUMN\n",
+      "score": 0.39735970711951313,
+      "matched_terms": [
+        "column",
+        "missing",
+        "schema"
+      ]
+    },
+    {
+      "chunk_id": "knowledge_base/runbooks/schema_missing_column.md#L30-L37",
+      "source": "knowledge_base/runbooks/schema_missing_column.md",
+      "heading": "Troubleshooting steps",
+      "start_line": 30,
+      "end_line": 37,
+      "text": "## Troubleshooting steps\n\n1. Compare the logged required columns with the observed columns.\n2. Inspect the header of the exact input file referenced in the log.\n3. Check column names for whitespace, spelling, and case differences.\n4. Compare extraction mappings with the expected input schema.\n5. Check upstream schema changes and confirm the correct file was read.\n",
+      "score": 0.1781741612749496,
+      "matched_terms": [
+        "column",
+        "schema"
+      ]
+    },
+    {
+      "chunk_id": "knowledge_base/runbooks/schema_missing_column.md#L8-L12",
+      "source": "knowledge_base/runbooks/schema_missing_column.md",
+      "heading": "Symptoms",
+      "start_line": 8,
+      "end_line": 12,
+      "text": "## Symptoms\n\nInput schema validation reports that one or more required columns\nare absent. The pipeline may stop before transformation and loading.\n",
+      "score": 0.1259881576697424,
+      "matched_terms": [
+        "schema"
+      ]
+    }
+  ],
+  "allowed_citations": [
+    "data/sample_logs/incident_001_missing_trip_id.log:L1",
+    "data/sample_logs/incident_001_missing_trip_id.log:L2",
+    "data/sample_logs/incident_001_missing_trip_id.log:L3",
+    "data/sample_logs/incident_001_missing_trip_id.log:L4",
+    "data/sample_logs/incident_001_missing_trip_id.log:L5",
+    "data/sample_logs/incident_001_missing_trip_id.log:L6",
+    "data/sample_logs/incident_001_missing_trip_id.log:L7",
+    "data/sample_logs/incident_001_missing_trip_id.log:L8",
+    "data/sample_logs/incident_001_missing_trip_id.log:L9",
+    "knowledge_base/runbooks/schema_missing_column.md:L1-L7",
+    "knowledge_base/runbooks/schema_missing_column.md:L30-L37",
+    "knowledge_base/runbooks/schema_missing_column.md:L8-L12"
+  ],
+  "citation_count": 6,
+  "citation_label_validity": 1.0,
+  "invalid_citations": [],
+  "citation_check_passed": true,
+  "semantic_review_status": "pending"
+}
