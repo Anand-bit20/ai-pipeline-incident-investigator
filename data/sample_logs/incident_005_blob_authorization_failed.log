@@ -1,0 +1,7 @@
+2026-10-14T11:00:00Z INFO incident_id=INC-005 pipeline=mobility_gold_export run_id=demo_005
+2026-10-14T11:00:01Z INFO stage=transform status=COMPLETED rows_prepared=547
+2026-10-14T11:00:02Z INFO stage=load container=gold blob=vehicle_observations_demo.csv
+2026-10-14T11:00:03Z ERROR stage=load error_code=AZURE_BLOB_AUTHORIZATION_FAILED http_status=403 storage_error_code=AuthorizationPermissionMismatch
+2026-10-14T11:00:03Z ERROR stage=load message="Upload request rejected. No blob was written by this request."
+2026-10-14T11:00:04Z INFO stage=load status=FAILED output_written=false
+2026-10-14T11:00:05Z ERROR pipeline_status=FAILED incident_id=INC-005 run_id=demo_005

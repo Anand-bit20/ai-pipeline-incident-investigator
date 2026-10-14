@@ -64,6 +64,70 @@
     "text": "## Limits\n\nTimeouts describe an observed failure, not a confirmed underlying cause.\nDo not infer rate limiting without HTTP status or other supporting evidence.\nDo not infer an empty API dataset when no response body was received.\nThis runbook does not establish what caused a specific incident."
   },
   {
+    "chunk_id": "knowledge_base/runbooks/azure_blob_authorization_failed.md#L1-L8",
+    "source": "knowledge_base/runbooks/azure_blob_authorization_failed.md",
+    "heading": "Document overview",
+    "start_line": 1,
+    "end_line": 8,
+    "text": "# Runbook: Azure Blob Upload Authorization Failure\n\nRunbook ID: RB-003\nVersion: 1.0\nSource type: Project-authored guide informed by Microsoft documentation\nApplicable error: AZURE_BLOB_AUTHORIZATION_FAILED\nReference: https://learn.microsoft.com/en-us/troubleshoot/azure/azure-storage/blobs/authentication/storage-troubleshoot-403-errors\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/azure_blob_authorization_failed.md#L9-L14",
+    "source": "knowledge_base/runbooks/azure_blob_authorization_failed.md",
+    "heading": "Symptoms",
+    "start_line": 9,
+    "end_line": 14,
+    "text": "## Symptoms\n\nA blob upload is rejected with HTTP 403.\nAuthorizationPermissionMismatch indicates insufficient permission\nfor the requested operation.\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/azure_blob_authorization_failed.md#L15-L23",
+    "source": "knowledge_base/runbooks/azure_blob_authorization_failed.md",
+    "heading": "Evidence to inspect",
+    "start_line": 15,
+    "end_line": 23,
+    "text": "## Evidence to inspect\n\n- HTTP status and the specific Azure Storage error code.\n- Requested operation, storage account, container, and blob.\n- Authentication method used by the running process.\n- Effective identity and relevant role assignments if using Entra ID.\n- SAS permissions and resource scope if using a SAS token.\n- Storage diagnostic records for the failed request.\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/azure_blob_authorization_failed.md#L24-L32",
+    "source": "knowledge_base/runbooks/azure_blob_authorization_failed.md",
+    "heading": "Possible causes",
+    "start_line": 24,
+    "end_line": 32,
+    "text": "## Possible causes\n\nThese are hypotheses until supported by evidence:\n\n- The SAS lacks permissions required by the operation.\n- The identity lacks a suitable blob data role.\n- A role assignment or credential targets the wrong resource scope.\n- The process is using a different identity than expected.\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/azure_blob_authorization_failed.md#L33-L41",
+    "source": "knowledge_base/runbooks/azure_blob_authorization_failed.md",
+    "heading": "Troubleshooting steps",
+    "start_line": 33,
+    "end_line": 41,
+    "text": "## Troubleshooting steps\n\n1. Confirm HTTP status, storage error code, and requested operation.\n2. Identify the authentication method actually used by the process.\n3. For SAS authentication, inspect permitted operations and resource scope.\n4. For Entra ID, inspect the effective identity's blob data roles and scope.\n5. Compare the configured destination with the intended resource.\n6. Review storage diagnostics to establish the configuration issue.\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/azure_blob_authorization_failed.md#L42-L48",
+    "source": "knowledge_base/runbooks/azure_blob_authorization_failed.md",
+    "heading": "Recovery",
+    "start_line": 42,
+    "end_line": 48,
+    "text": "## Recovery\n\n- Correct only the permission or scope issue identified by evidence.\n- Have the appropriate resource owner apply required access changes.\n- Check for existing outputs before rerunning the upload.\n- Avoid logging credential values or granting unnecessary access.\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/azure_blob_authorization_failed.md#L49-L55",
+    "source": "knowledge_base/runbooks/azure_blob_authorization_failed.md",
+    "heading": "Verification",
+    "start_line": 49,
+    "end_line": 55,
+    "text": "## Verification\n\n1. Confirm the upload succeeds after the identified issue is corrected.\n2. Verify the expected blob and its contents.\n3. Check for unintended duplicate or partial outputs.\n4. Confirm the pipeline completes successfully.\n"
+  },
+  {
+    "chunk_id": "knowledge_base/runbooks/azure_blob_authorization_failed.md#L56-L61",
+    "source": "knowledge_base/runbooks/azure_blob_authorization_failed.md",
+    "heading": "Limits",
+    "start_line": 56,
+    "end_line": 61,
+    "text": "## Limits\n\nA permission rejection does not identify the exact misconfiguration.\nDo not assume the process uses SAS or Entra ID without evidence.\nNo output from this request does not prove that the container is empty.\nThis guide does not establish the underlying cause of a specific incident."
+  },
+  {
     "chunk_id": "knowledge_base/runbooks/schema_missing_column.md#L1-L7",
     "source": "knowledge_base/runbooks/schema_missing_column.md",
     "heading": "Document overview",

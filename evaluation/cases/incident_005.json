@@ -1,0 +1,34 @@
+{
+  "case_id": "INC-005",
+  "incident_source": "data/sample_logs/incident_005_blob_authorization_failed.log",
+  "expected_facts": {
+    "error_code": "AZURE_BLOB_AUTHORIZATION_FAILED",
+    "failure_stage": "load",
+    "http_status": 403,
+    "storage_error_code": "AuthorizationPermissionMismatch",
+    "transformation_status": "COMPLETED",
+    "load_status": "FAILED",
+    "pipeline_status": "FAILED",
+    "output_written": false,
+    "underlying_cause": "UNCONFIRMED"
+  },
+  "supporting_log_lines": {
+    "transformation_completed": [2],
+    "authorization_rejection": [4],
+    "request_wrote_no_blob": [5],
+    "load_failed_and_no_output": [6],
+    "pipeline_failed": [7]
+  },
+  "troubleshooting_reference": {
+    "source": "knowledge_base/runbooks/azure_blob_authorization_failed.md",
+    "start_line": 33,
+    "end_line": 41
+  },
+  "review_requirements": [
+    "Identify the authorization failure during loading.",
+    "Distinguish completed transformation from failed loading.",
+    "Keep the exact underlying misconfiguration unconfirmed.",
+    "Support troubleshooting without assuming an authentication method.",
+    "Support additional-evidence requests with relevant citations."
+  ]
+}
