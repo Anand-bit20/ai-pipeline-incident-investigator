@@ -1,6 +1,7 @@
 import json
 import subprocess
 import sys
+import hashlib
 from pathlib import Path
 
 import streamlit as st
@@ -128,6 +129,47 @@ incident = st.selectbox(
     incidents,
     format_func=lambda path: path.stem.replace("_", " ").title(),
 )
+
+uploaded_log = st.file_uploader(
+    "Or upload an incident log",
+    type=["log", "txt"],
+    max_upload_size=1,
+)
+
+st.caption(
+    "Upload a short UTF-8 log in the same key=value format as the samples "
+    "(up to 4 KB). An uploaded file takes priority over sample selection."
+)
+
+if uploaded_log is not None:
+    uploaded_bytes = uploaded_log.getvalue()
+
+    if len(uploaded_bytes) > 4096:
+        st.error("For this first version, upload a log of 4 KB or less.")
+        st.stop()
+
+    try:
+        uploaded_text = uploaded_bytes.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        st.error("The uploaded log must use UTF-8 encoding.")
+        st.stop()
+
+    if not uploaded_text.strip():
+        st.error("The uploaded log is empty.")
+        st.stop()
+
+    upload_dir = PROJECT_ROOT / "data" / "uploads"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    # Identify the file by its contents, independently of its filename.
+    digest = hashlib.sha256(uploaded_bytes).hexdigest()[:16]
+    incident = upload_dir / f"uploaded_{digest}.log"
+
+    if not incident.exists():
+        incident.write_bytes(uploaded_bytes)
+
+    st.info(f"Selected uploaded log: {uploaded_log.name}")
+
 
 with st.expander("View incident log"):
     st.code(

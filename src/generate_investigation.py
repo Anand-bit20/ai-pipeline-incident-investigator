@@ -166,6 +166,35 @@ def main() -> None:
         "additionalProperties": False,
     }
 
+    root_cause_labels = {
+        f"{log['source']}:L{line['line_number']}"
+        for line in log["lines"]
+    }
+    root_cause_labels.update(
+        f"{p['source']}:L{p['start_line']}-L{p['end_line']}"
+        for p in passages
+        if p["heading"] == "Limits"
+    )
+
+    root_cause_finding_schema = {
+        **finding_schema,
+        "properties": {
+            **finding_schema["properties"],
+            "citations": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "string",
+                    "enum": sorted(root_cause_labels),
+                },
+            },
+        },
+    }
+
+    report_schema["properties"]["root_cause_status"]["items"] = (
+        root_cause_finding_schema
+    )
+
     payload = {
         "model": args.model,
         "format": report_schema,
