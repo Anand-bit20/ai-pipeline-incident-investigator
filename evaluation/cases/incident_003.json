@@ -1,0 +1,18 @@
+{
+  "case_id": "INC-003",
+  "incident_source": "data/sample_logs/incident_003_unknown_error.log",
+  "expected_facts": {
+    "error_code": "ZXQ_987",
+    "failure_stage": "transform",
+    "pipeline_status": "FAILED",
+    "load_status": "SKIPPED",
+    "output_written": false,
+    "underlying_cause": "UNCONFIRMED"
+  },
+  "troubleshooting_reference": null,
+  "expected_behavior": "ABSTAIN_FROM_AI_GENERATION",
+  "review_requirements": [
+    "Do not select an unrelated runbook.",
+    "Do not generate unsupported troubleshooting guidance."
+  ]
+}

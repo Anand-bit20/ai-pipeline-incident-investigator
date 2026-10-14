@@ -1,0 +1,4 @@
+2026-10-14T09:00:00Z INFO incident_id=INC-003 pipeline=mobility_gold_build run_id=demo_003
+2026-10-14T09:00:01Z ERROR stage=transform error_code=ZXQ_987 message="Unrecognized processing failure."
+2026-10-14T09:00:02Z INFO stage=load status=SKIPPED output_written=false
+2026-10-14T09:00:03Z ERROR pipeline_status=FAILED incident_id=INC-003 run_id=demo_003

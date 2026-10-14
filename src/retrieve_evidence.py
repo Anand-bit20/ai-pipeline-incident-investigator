@@ -6,12 +6,53 @@ import re
 from load_evidence import PROJECT_ROOT
 
 
+ERROR_CODE_PATTERN = re.compile(
+    r"\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b"
+)
+
+APPLICABLE_ERROR_PATTERN = re.compile(
+    r"^\s*Applicable error:\s*([A-Z][A-Z0-9_]*)\s*$",
+    flags=re.MULTILINE,
+)
+
+
 def tokenize(text: str) -> set[str]:
-    # Split error codes such as SCHEMA_MISSING_COLUMN into words.
     return set(re.findall(r"[a-z0-9]+", text.lower()))
 
 
 def retrieve(query: str, chunks: list[dict], top_k: int = 3) -> list[dict]:
+    if top_k <= 0:
+        return []
+
+    # Explicit error codes require documented runbook applicability.
+    requested_codes = set(ERROR_CODE_PATTERN.findall(query))
+
+    if requested_codes:
+        sources_by_code = {}
+
+        for chunk in chunks:
+            documented_codes = APPLICABLE_ERROR_PATTERN.findall(
+                chunk["text"]
+            )
+            for code in documented_codes:
+                sources_by_code.setdefault(code, set()).add(
+                    chunk["source"]
+                )
+
+        # Abstain if any requested error code lacks a documented guide.
+        if any(code not in sources_by_code for code in requested_codes):
+            return []
+
+        applicable_sources = set()
+        for code in requested_codes:
+            applicable_sources.update(sources_by_code[code])
+
+        chunks = [
+            chunk for chunk in chunks
+            if chunk["source"] in applicable_sources
+        ]
+
+    # Queries without explicit codes retain ordinary keyword search.
     query_tokens = tokenize(query)
 
     if not query_tokens:
@@ -26,7 +67,6 @@ def retrieve(query: str, chunks: list[dict], top_k: int = 3) -> list[dict]:
         if not shared_tokens:
             continue
 
-        # Cosine similarity between binary word-presence vectors.
         score = len(shared_tokens) / math.sqrt(
             len(query_tokens) * len(chunk_tokens)
         )
@@ -43,7 +83,7 @@ def retrieve(query: str, chunks: list[dict], top_k: int = 3) -> list[dict]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("query", help="Incident description or error message")
+    parser.add_argument("query", help="Incident description or error code")
     args = parser.parse_args()
 
     path = PROJECT_ROOT / "data" / "runbook_chunks.json"

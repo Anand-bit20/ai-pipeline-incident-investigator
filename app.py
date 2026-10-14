@@ -18,6 +18,10 @@ SECTION_NAMES = {
 }
 
 
+class NoApplicableRunbook(RuntimeError):
+    """The incident has no documented troubleshooting guide."""
+
+
 def generate_report(incident_path: Path) -> Path:
     result = subprocess.run(
         [
@@ -44,6 +48,12 @@ def generate_report(incident_path: Path) -> Path:
     ]
 
     if not saved_paths:
+        if "No matching runbook evidence." in result.stdout:
+            raise NoApplicableRunbook(
+                "No applicable runbook is documented for this error. "
+                "AI troubleshooting was not generated."
+            )
+
         raise RuntimeError(
             result.stdout or "The investigator did not save a report."
         )
@@ -105,7 +115,9 @@ st.write(
 )
 st.caption("Portfolio demo using synthetic incidents and local AI.")
 
-incidents = sorted((PROJECT_ROOT / "data" / "sample_logs").glob("*.log"))
+incidents = sorted(
+    (PROJECT_ROOT / "data" / "sample_logs").glob("*.log")
+)
 
 if not incidents:
     st.error("No sample incident logs were found.")
@@ -118,7 +130,10 @@ incident = st.selectbox(
 )
 
 with st.expander("View incident log"):
-    st.code(incident.read_text(encoding="utf-8-sig"), language="text")
+    st.code(
+        incident.read_text(encoding="utf-8-sig"),
+        language="text",
+    )
 
 if "reports_by_incident" not in st.session_state:
     st.session_state["reports_by_incident"] = {}
@@ -138,9 +153,11 @@ with right:
 
 if generate_clicked:
     try:
-        with st.spinner("Investigating with the local model..."):
+        with st.spinner("Checking evidence and preparing the investigation..."):
             report_path = generate_report(incident)
-            record = json.loads(report_path.read_text(encoding="utf-8"))
+            record = json.loads(
+                report_path.read_text(encoding="utf-8")
+            )
 
         st.session_state["reports_by_incident"][incident_key] = {
             "path": str(report_path),
@@ -148,12 +165,29 @@ if generate_clicked:
         }
         st.success("Investigation generated.")
 
-    except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired) as error:
+    except NoApplicableRunbook as error:
+        st.session_state["reports_by_incident"].pop(
+            incident_key, None
+        )
+        st.info(str(error))
+        st.write(
+            "Inspect the incident log above and add an appropriate "
+            "troubleshooting guide before trying again."
+        )
+
+    except (
+        OSError,
+        ValueError,
+        RuntimeError,
+        subprocess.TimeoutExpired,
+    ) as error:
         st.error(f"Investigation could not be completed: {error}")
 
 if load_clicked:
     try:
-        candidates = list(REPORT_DIR.glob(f"{incident.stem}_*.json"))
+        candidates = list(
+            REPORT_DIR.glob(f"{incident.stem}_*.json")
+        )
 
         if not candidates:
             st.info("No saved report exists for this incident yet.")
@@ -162,31 +196,41 @@ if load_clicked:
                 candidates,
                 key=lambda path: path.stat().st_mtime_ns,
             )
-            record = json.loads(report_path.read_text(encoding="utf-8"))
+            record = json.loads(
+                report_path.read_text(encoding="utf-8")
+            )
 
             st.session_state["reports_by_incident"][incident_key] = {
                 "path": str(report_path),
                 "record": record,
             }
-            st.success("Saved report opened. No model call was made.")
+            st.success(
+                "Saved report opened. No model call was made."
+            )
 
     except (OSError, ValueError) as error:
         st.error(f"Could not open the report: {error}")
 
-current = st.session_state["reports_by_incident"].get(incident_key)
+current = st.session_state["reports_by_incident"].get(
+    incident_key
+)
 
 if current:
     record = current["record"]
     report_path = Path(current["path"])
     report = json.loads(record["report"])
     evidence = evidence_lookup(record)
+    review = find_review(report_path)
 
     first, second, third = st.columns(3)
+
     first.metric("Model", record["model"])
+
     second.metric(
         "Model request time",
         f"{record['response_seconds']:.1f} seconds",
     )
+
     third.metric(
         "Citation label validity",
         f"{record['citation_label_validity']:.0%}",
@@ -212,7 +256,10 @@ if current:
                 st.caption(
                     "Extracted from logs"
                     if origin == "deterministic_log_extraction"
-                    else "AI-generated guidance — review against the evidence"
+                    else (
+                        "AI-generated guidance — "
+                        "review against the evidence"
+                    )
                 )
 
             for finding in report.get(section, []):
@@ -221,35 +268,45 @@ if current:
                 for citation in finding["citations"]:
                     with st.expander(f"Source: {citation}"):
                         source_text = evidence.get(citation)
+
                         if source_text is None:
-                            st.warning("This citation is not in the supplied evidence.")
+                            st.warning(
+                                "This citation is not in "
+                                "the supplied evidence."
+                            )
                         else:
-                            st.code(source_text, language="text")
+                            st.code(
+                                source_text,
+                                language="text",
+                            )
 
     with evidence_tab:
-        st.subheader("Evidence supplied to this investigation")
+        st.subheader(
+            "Evidence supplied to this investigation"
+        )
 
         for citation, text in evidence.items():
             with st.expander(citation):
                 st.code(text, language="text")
 
     with evaluation_tab:
-        review = find_review(report_path)
-
         if review is None:
-            st.info("This specific report has not been manually reviewed.")
+            st.info(
+                "This specific report has not been "
+                "manually reviewed."
+            )
         else:
             manual = review["manual_review"]
             st.write(
-                f"Manual review: {manual['passed']}/{manual['total']} "
-                "criteria passed."
+                f"Manual review: {manual['passed']}/"
+                f"{manual['total']} criteria passed."
             )
             st.json(review)
 
         with st.expander("Original model answer"):
-            st.json(record.get("raw_model_report", report))
-
-    review = find_review(report_path)
+            st.json(
+                record.get("raw_model_report", report)
+            )
 
     export_record = {
         **record,
@@ -261,7 +318,11 @@ if current:
 
     st.download_button(
         "Download investigation and evidence",
-        data=json.dumps(export_record, indent=2, ensure_ascii=False),
+        data=json.dumps(
+            export_record,
+            indent=2,
+            ensure_ascii=False,
+        ),
         file_name=report_path.name,
         mime="application/json",
         on_click="ignore",

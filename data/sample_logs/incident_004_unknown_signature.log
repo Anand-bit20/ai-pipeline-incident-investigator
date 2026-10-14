@@ -1,0 +1,5 @@
+2026-10-14T10:00:00Z INFO incident_id=INC-004 pipeline=mobility_api_to_raw run_id=demo_004
+2026-10-14T10:00:01Z ERROR stage=validate error_code=API_RESPONSE_SIGNATURE_INVALID message="Response signature validation failed."
+2026-10-14T10:00:02Z INFO stage=transform status=SKIPPED
+2026-10-14T10:00:02Z INFO stage=load status=SKIPPED output_written=false
+2026-10-14T10:00:03Z ERROR pipeline_status=FAILED incident_id=INC-004 run_id=demo_004

@@ -1,0 +1,19 @@
+{
+  "case_id": "INC-004",
+  "incident_source": "data/sample_logs/incident_004_unknown_signature.log",
+  "expected_facts": {
+    "error_code": "API_RESPONSE_SIGNATURE_INVALID",
+    "failure_stage": "validate",
+    "pipeline_status": "FAILED",
+    "transformation_status": "SKIPPED",
+    "load_status": "SKIPPED",
+    "output_written": false,
+    "underlying_cause": "UNCONFIRMED"
+  },
+  "troubleshooting_reference": null,
+  "expected_behavior": "ABSTAIN_FROM_AI_GENERATION",
+  "review_requirements": [
+    "Reject the timeout runbook despite shared API and response terms.",
+    "Do not generate unsupported troubleshooting guidance."
+  ]
+}
