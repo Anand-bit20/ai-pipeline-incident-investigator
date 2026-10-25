@@ -1,150 +1,260 @@
-# AI-Powered Data Pipeline Incident Investigator
+# AI-Powered Data Pipeline Incident Investigator & ReleaseGuard AI
 
-A local application that combines pipeline logs with retrieved
-troubleshooting documentation to produce investigations with source citations.
+An evidence-grounded AI application for investigating data pipeline failures and assessing software release readiness.
 
-## Problem
+Built using **Python, Streamlit, Ollama, Gemma 3, semantic retrieval, and rule-based release evaluation**.
 
-Investigating pipeline failures requires reading logs, finding relevant
-documentation, and deciding which checks to perform next.
+The application operates locally, generates cited investigation reports, and provides GO, NO-GO, or REVIEW release recommendations while retaining human oversight.
 
-This project brings that evidence together and suggests troubleshooting
-steps while distinguishing observed failures from unconfirmed causes.
+## 1. Problem Statement
 
-## Current features
+Data pipeline incidents can delay software releases and require engineers to manually inspect logs, identify failure patterns, consult troubleshooting documentation, and assess deployment risks.
 
-- Streamlit interface for selecting synthetic sample incidents.
-- Structured extraction of facts from key=value logs.
-- Keyword retrieval of relevant runbook passages.
-- Expansion of matched runbooks with investigation guidance and limits.
-- Local AI generation using Ollama and gemma3:4b.
-- Source citations with expandable evidence.
-- Saved reports and preservation of original model answers.
+Release decisions may also depend on incomplete test evidence, unresolved incidents, and inconsistent readiness checks.
+
+This project combines two capabilities:
+
+- **AI Incident Investigator:** Analyzes pipeline logs and retrieves relevant troubleshooting evidence.
+- **ReleaseGuard AI:** Evaluates release readiness and incorporates incident investigations into a structured release assessment.
+
+## 2. Core Features
+
+### AI Incident Investigator
+
+- Structured extraction of facts from synthetic pipeline logs.
+- Keyword-based and semantic retrieval of troubleshooting runbooks.
+- Local AI generation using Ollama and `gemma3:4b`.
+- Semantic embeddings using `embeddinggemma`.
+- Evidence-grounded investigation reports with source citations.
+- Separation of observed failures from unconfirmed root causes.
 - Automatic report-structure and citation-label checks.
-- Manual evaluation against five review criteria.
-- JSON downloads containing evidence and any matching manual review.
+- Saved investigation reports and manual review records.
+- Streamlit interface for incident investigation and review.
+- Evaluation scripts for retrieval quality.
 
-## Architecture
+### ReleaseGuard AI
 
-1. Load the incident log and preserve its line numbers.
-2. Extract explicit error codes and other recorded facts.
-3. Retrieve relevant runbook chunks using keyword similarity.
-4. Supply the log, extracted facts, and selected passages to the model.
-5. Generate structured findings with constrained citation labels.
-6. Build observed-failure and pipeline-impact sections from parsed logs.
-7. Save and display the assembled report alongside the original model answer.
+- Rule-based release readiness assessment.
+- Three supported recommendations: GO, NO-GO, and REVIEW.
+- Validation of automated test evidence, data validation, and release checklists.
+- Identification of missing evidence and unresolved incidents.
+- AI incident investigation for referenced pipeline failures.
+- Combined release assessment and investigation reporting.
+- Saved assessment records.
+- Streamlit dashboard for evaluating synthetic releases.
+- Mandatory human review.
+- No automatic deployment execution.
 
-## Requirements
+**Important:** GO indicates that declared evidence meets the prototype policy. It is not deployment authorization.
 
-- Python 3.10: developed with Python 3.10.11.
-- Ollama running locally.
-- The gemma3:4b model downloaded in Ollama.
-- Dependencies listed in requirements.txt.
+## 3. System Architecture
 
-Other Python versions have not yet been tested for this project.
+```text
+                  PIPELINE INCIDENT LOGS
+                           |
+                           v
+                    Fact Extraction
+                           |
+                           v
+               Keyword / Semantic Retrieval
+                           |
+                           v
+               Troubleshooting Runbooks
+                           |
+                           v
+                  Ollama + Gemma 3
+                           |
+                           v
+                 Cited Investigation
+                           |
+                           v
+                    Saved AI Report
+                           |
+                           |
+RELEASE EVIDENCE ----------+
+        |
+        v
+Rule-Based Readiness Evaluation
+        |
+        v
+ GO / NO-GO / REVIEW
+        |
+        v
+Combined Release Assessment
+        |
+        v
+Human Review Required
+```
 
-## Setup
+Release recommendations are determined by explicit rules. AI-generated investigations provide supporting information but cannot override these recommendations.
 
-Install the Python dependencies:
+## 4. Technology Stack
+
+| Technology | Purpose |
+|---|---|
+| Python 3.10 | Application logic |
+| Streamlit | User interface |
+| Ollama | Local model runtime |
+| Gemma 3 4B | Investigation generation |
+| EmbeddingGemma | Semantic embeddings |
+| JSON | Evidence and report storage |
+| Git / GitHub | Version control |
+
+The semantic index stores embeddings for troubleshooting documentation and supports similarity-based evidence retrieval.
+
+## 5. Installation and Setup
+
+### Requirements
+
+- Python 3.10 (developed using 3.10.11)
+- Ollama installed and running locally
+- Sufficient system resources for local AI models
+
+### Install Python dependencies
 
 ```powershell
 python -m pip install -r requirements.txt
 ```
 
-Download the model:
+### Download the AI models
 
 ```powershell
 ollama pull gemma3:4b
+ollama pull embeddinggemma
 ```
 
-If PowerShell cannot find Ollama, use its default Windows installation path:
+If Ollama is not available in PowerShell:
 
 ```powershell
 & "$env:LOCALAPPDATA\Programs\Ollama\ollama.exe" pull gemma3:4b
+& "$env:LOCALAPPDATA\Programs\Ollama\ollama.exe" pull embeddinggemma
 ```
 
-Keep the Ollama application running.
+Keep Ollama running.
 
-Build the runbook chunks:
+### Prepare troubleshooting documentation
 
 ```powershell
 python .\src\chunk_runbooks.py
 ```
 
-Start the application:
+### Build the semantic index
+
+```powershell
+python .\src\build_semantic_index.py
+```
+
+### Launch the application
 
 ```powershell
 python -m streamlit run .\app.py --server.address 127.0.0.1
 ```
 
-Open http://localhost:8501.
+Open:
 
-Select an incident and generate an investigation, or open an existing
-saved report without making another model call.
+http://localhost:8501
 
-## Sample incidents
+Use the incident investigator or navigate to the ReleaseGuard AI page.
 
-| Case | Observed failure |
+## 6. Incident Investigation
+
+The application supports synthetic incident scenarios involving:
+
+- Missing required schema columns.
+- API request timeouts.
+- Unknown errors and insufficient evidence.
+- Azure Blob authorization failures.
+
+The investigation process combines extracted facts with retrieved documentation.
+
+Generated findings distinguish recorded pipeline behavior from troubleshooting hypotheses and requests for additional evidence.
+
+## 7. ReleaseGuard AI Demo Scenarios
+
+| Release | Scenario | Expected recommendation |
+|---|---|---|
+| REL-001 | Failed data validation and unresolved incident | NO-GO |
+| REL-002 | All required checks passed with declared evidence | GO |
+| REL-003 | Missing required automated test evidence | REVIEW |
+
+### Run individual release checks
+
+```powershell
+python .\src\evaluate_release.py data\sample_releases\release_001_blocked.json
+python .\src\evaluate_release.py data\sample_releases\release_002_ready.json
+python .\src\evaluate_release.py data\sample_releases\release_003_review.json
+```
+
+### Run combined release assessment and AI investigation
+
+```powershell
+python .\src\assess_release.py data\sample_releases\release_001_blocked.json
+```
+
+The combined assessment saves the release recommendation, investigation results, and human review status.
+
+## 8. Evaluation and Testing
+
+The prototype has been tested against three synthetic release scenarios:
+
+- REL-001: NO-GO correctly returned.
+- REL-002: GO correctly returned.
+- REL-003: REVIEW correctly returned.
+
+An integration test for REL-001 successfully generated an incident investigation with 100% citation-label validity and no invalid citation labels.
+
+A separate failure-handling test confirmed that an investigation failure does not override a NO-GO recommendation, that errors are recorded, and that human review remains pending.
+
+Retrieval evaluation utilities are included to assess keyword and semantic retrieval.
+
+These tests demonstrate the expected behavior for selected synthetic cases. They do not establish production reliability or generalized model accuracy.
+
+Citation-label validity confirms citation formatting and referencing, not necessarily the factual support of every claim.
+
+## 9. Project Structure
+
+| Location | Purpose |
 |---|---|
-| INC-001 | Missing trip_id column during schema validation |
-| INC-002 | API request timeouts during extraction |
+| `app.py` | Main Streamlit application |
+| `pages/` | ReleaseGuard dashboard |
+| `src/` | Investigation, retrieval, release assessment, and evaluation |
+| `data/sample_logs/` | Synthetic incident logs |
+| `data/sample_releases/` | Synthetic release evidence |
+| `knowledge_base/runbooks/` | Troubleshooting documentation |
+| `evaluation/cases/` | Evaluation scenarios |
+| `evaluation/reports/` | Locally generated investigation reports |
+| `evaluation/reviews/` | Locally generated manual reviews |
+| `evaluation/release_assessments/` | Locally generated combined assessments |
 
-All sample logs are synthetic. Runbooks are project-authored guides.
-They are not official vendor documentation.
+Generated investigation reports, review records, assessment results, and the semantic index are excluded from Git tracking.
 
-## Evaluation
+## 10. Safety and Limitations
 
-Automatic checks verify required sections and citation-label validity.
+- This is a local demonstration prototype, not a production release governance system.
+- Release readiness is evaluated from declared evidence, which is not independently verified.
+- All sample release and incident data are synthetic.
+- Human approval is always required.
+- The application does not deploy or automatically repair pipelines.
+- AI investigation outputs may be inaccurate and require evidence review.
+- The supported log formats and evaluation scenarios remain limited.
+- Citation-label validity does not guarantee claim correctness.
+- Local model execution requires Ollama and compatible hardware.
+- Investigation-time savings and production performance have not been established.
 
-Manual review assesses:
+## 11. Future Improvements
 
-1. Failure identification.
-2. Pipeline impact.
-3. Root-cause uncertainty.
-4. Supported troubleshooting.
-5. Supported evidence requests.
+- Integrate CI/CD platforms and automated test systems.
+- Verify readiness evidence directly from trusted source systems.
+- Support additional log formats and data validation artifacts.
+- Expand incident and release evaluation datasets.
+- Add formal automated regression tests.
+- Introduce role-based human approval workflows.
+- Measure investigation accuracy, latency, and operational efficiency.
 
-Selected assembled reports for both sample incidents passed all five
-manual criteria. These are development examples, not a held-out benchmark
-or an estimate of general application accuracy.
+## 12. Project Purpose
 
-Citation-label validity does not establish that a statement is supported.
+This project demonstrates the integration of data engineering, retrieval-augmented generation, local large language models, deterministic decision rules, and human-in-the-loop review.
 
-Original model answers are preserved. One timeout answer incorrectly
-claimed extraction was skipped. The assembled report used parsed log facts
-to correctly distinguish extraction failure from skipped downstream stages.
+The goal is to support faster, more transparent incident investigation and release readiness assessment without replacing engineering judgment or deployment controls.
 
-Manual reviews apply to specific saved reports. Newly generated reports
-remain unreviewed until assessed.
-
-## Project folders
-
-| Location | Contents |
-|---|---|
-| app.py | Streamlit interface |
-| src/ | Loading, extraction, retrieval, generation, and review scripts |
-| data/sample_logs/ | Synthetic incident logs |
-| data/runbook_chunks.json | Generated runbook chunks |
-| knowledge_base/runbooks/ | Troubleshooting guides |
-| evaluation/cases/ | Expected facts and review requirements |
-| evaluation/reports/ | Saved investigation records |
-| evaluation/reviews/ | Recorded manual review decisions |
-
-## Current limitations
-
-- Supports our sample key=value log format.
-- Uses keyword retrieval; semantic retrieval is not implemented yet.
-- No upload interface or validation-results CSV/JSON ingestion yet.
-- Suggestions still require evidence review.
-- Does not automatically repair pipelines.
-- Investigation-time savings have not been measured.
-- Local model performance depends on the machine and model configuration.
-
-## Planned improvements
-
-- More incident types and evaluation cases.
-- Unknown-error and insufficient-evidence handling.
-- Retrieval evaluation and comparison with semantic retrieval.
-- Log upload and validation-results ingestion.
-- Clearer presentation of repeated attempts.
-- Broader testing and measurement of investigation time.
+**Project status:** Functional local prototype validated against selected synthetic scenarios.

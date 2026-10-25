@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "release_id": "REL-003",
+  "release_name": "Mobility Pipeline — Missing Test Evidence",
+  "environment": "UAT",
+  "synthetic_demo": true,
+  "checks": {
+    "data_validation": {
+      "status": "PASS",
+      "evidence": "Synthetic demo: all required data validation checks passed."
+    },
+    "release_checklist": {
+      "status": "PASS",
+      "evidence": "Synthetic demo: release preparation checklist completed."
+    }
+  },
+  "unresolved_incidents": []
+}

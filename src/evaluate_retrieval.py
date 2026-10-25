@@ -1,12 +1,50 @@
 import json
 import time
+import argparse
 
+from retrieve_semantic import load_index, retrieve_semantic
 from extract_incident_facts import extract_facts
 from load_evidence import PROJECT_ROOT, load_evidence
 from retrieve_evidence import retrieve
 
+NATURAL_LANGUAGE_QUERIES = {
+    "INC-001": (
+        "Validation stopped because the required trip identifier column "
+        "was absent from the input. What should I check to investigate?"
+    ),
+    "INC-002": (
+        "Extraction failed after three requests took too long to receive "
+        "a response. What evidence should I inspect to investigate?"
+    ),
+    "INC-005": (
+        "Transformation finished, but uploading to Azure Blob Storage "
+        "was rejected with HTTP 403 and nothing was written. "
+        "What should I check to investigate?"
+    ),
+}
+
+
+
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--retriever",
+        choices=["keyword", "semantic"],
+        default="keyword",
+    )
+
+    parser.add_argument(
+        "--query-mode",
+        choices=["error-code", "natural-language"],
+        default="error-code",
+    )
+    args = parser.parse_args()
+
+    semantic_index = (
+        load_index() if args.retriever == "semantic" else None
+    )
+
     chunks_path = PROJECT_ROOT / "data" / "runbook_chunks.json"
     chunks = json.loads(chunks_path.read_text(encoding="utf-8"))
 
@@ -20,22 +58,42 @@ def main() -> None:
 
     for case_path in case_paths:
         case = json.loads(case_path.read_text(encoding="utf-8"))
-        facts = extract_facts(load_evidence(case["incident_source"]))
+        if args.query_mode == "natural-language":
+            query = NATURAL_LANGUAGE_QUERIES.get(case["case_id"])
 
-        error_codes = sorted({
-            entry["fields"]["error_code"]
-            for entry in facts["explicit_errors"]
-        })
-        if not error_codes:
-            raise ValueError(f"No error codes in case {case['case_id']}.")
+            if query is None:
+                continue
+        else:
+            facts = extract_facts(load_evidence(case["incident_source"]))
 
-        query = " ".join(error_codes)
-        passages = retrieve(query, chunks, top_k=3)
+            error_codes = sorted({
+                entry["fields"]["error_code"]
+                for entry in facts["explicit_errors"]
+            })
+
+            if not error_codes:
+                raise ValueError(
+                    f"No error codes in case {case['case_id']}."
+                )
+
+            query = " ".join(error_codes)
+
+        retrieval_start = time.perf_counter()
+
+        if args.retriever == "semantic":
+            passages = retrieve_semantic(query, semantic_index, top_k=3)
+        else:
+            passages = retrieve(query, chunks, top_k=3)
+
+        retrieval_seconds = time.perf_counter() - retrieval_start
         reference = case.get("troubleshooting_reference")
 
         result = {
             "case_id": case["case_id"],
+            "retriever": args.retriever,
             "query": query,
+            "query_mode": args.query_mode,
+            "retrieval_seconds": round(retrieval_seconds, 4),
             "retrieved_chunks": [
                 passage["chunk_id"] for passage in passages
             ],
@@ -80,7 +138,8 @@ def main() -> None:
 
     summary = {
         "evaluation_scope": "Small development set; not held-out",
-        "retriever": "Error-code applicability filter plus keyword cosine similarity",
+        "retriever": args.retriever,
+        "query_mode": args.query_mode,
         "top_k": 3,
         "total_cases": len(results),
         "runbook_selection_or_abstention_passes": sum(
@@ -103,7 +162,10 @@ def main() -> None:
 
     output_dir = PROJECT_ROOT / "evaluation" / "results"
     output_dir.mkdir(parents=True, exist_ok=True)
-    output_path = output_dir / f"retrieval_{time.time_ns()}.json"
+    output_path = output_dir / (
+        f"retrieval_{args.retriever}_{args.query_mode}_"
+        f"{time.time_ns()}.json"
+    )
     output_path.write_text(
         json.dumps(summary, indent=2),
         encoding="utf-8",

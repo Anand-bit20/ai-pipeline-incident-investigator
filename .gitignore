@@ -20,3 +20,17 @@ Thumbs.db
 data/uploads/
 evaluation/reports/uploaded_*.json
 evaluation/reviews/uploaded_*.json
+
+# Generated embedding index
+data/semantic_index.json
+data/semantic_index.tmp
+# Generated evaluation outputs
+evaluation/reports/*.json
+evaluation/reviews/*.json
+evaluation/results/*.json
+evaluation/release_assessments/
+
+# Python test and temporary files
+.pytest_cache/
+.coverage
+*.tmp
