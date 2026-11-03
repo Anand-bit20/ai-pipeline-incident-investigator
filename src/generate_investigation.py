@@ -11,6 +11,7 @@ from extract_incident_facts import extract_facts
 from load_evidence import PROJECT_ROOT, load_evidence
 from retrieve_evidence import retrieve
 from retrieve_semantic import load_index, retrieve_semantic
+from bedrock_llm import generate_text
 
 
 SYSTEM_PROMPT = """
@@ -132,7 +133,11 @@ def generate_investigation(
     log_path: str,
     model: str = "gemma3:4b",
     retriever: str = "semantic",
+    provider: str = "ollama",
 ) -> dict | None:
+    if provider not in {"ollama", "bedrock"}:
+        raise ValueError("Provider must be ollama or bedrock.")
+
     if retriever not in {"keyword", "semantic"}:
         raise ValueError("Retriever must be keyword or semantic.")
 
@@ -187,7 +192,7 @@ def generate_investigation(
     retrieval_start = time.perf_counter()
 
     if args.retriever == "semantic":
-        semantic_index = load_index()
+        semantic_index = load_index(provider=provider)
         passages = retrieve_semantic(query, semantic_index, top_k=3)
     else:
         passages = retrieve(query, chunks, top_k=3)
@@ -331,58 +336,124 @@ def generate_investigation(
         },
     }
 
-    request = urllib.request.Request(
-        "http://localhost:11434/api/chat",
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-        method="POST",
+
+    user_prompt = (
+        "Investigate this incident.\n\n"
+        f"INCIDENT LOG:\n{log_context}\n\n"
+        "EXTRACTED LOG FACTS:\n"
+        f"{json.dumps(facts, indent=2)}\n\n"
+        f"RETRIEVED RUNBOOK PASSAGES:\n{runbook_context}"
     )
 
-    print(f"Generating investigation with {args.model}...", flush=True)
+    print(
+        f"Generating investigation with {provider}...",
+        flush=True,
+    )
     start = time.perf_counter()
 
-    try:
-        with urllib.request.urlopen(request, timeout=180) as response:
-            result = json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as error:
-        print(f"Ollama HTTP error {error.code}:")
-        print(error.read().decode("utf-8", errors="replace"))
-        return {
-            "status": "error",
-            "reason": "Investigation generation failed; see diagnostic output.",
-            "incident_source": log["source"],
-        }
-    except (urllib.error.URLError, TimeoutError) as error:
-        print(f"Could not complete the local Ollama request: {error}")
-        print("Check that the Ollama application is running.")
-        return {
-            "status": "error",
-            "reason": "Investigation generation failed; see diagnostic output.",
-            "incident_source": log["source"],
-        }
+    if provider == "bedrock":
+        bedrock_prompt = (
+            user_prompt
+            + "\n\nReturn ONLY a valid JSON object with these "
+              "five keys: observed_failure, pipeline_impact, "
+              "root_cause_status, troubleshooting, "
+              "additional_evidence. Every key must contain "
+              "a non-empty array of objects with statement "
+              "and citations. Use only the citation labels "
+              "provided in the evidence. Do not include "
+              "Markdown code fences."
+            + "\n\nJSON SCHEMA:\n"
+            + json.dumps(report_schema)
+        )
+
+        try:
+            answer = generate_text(
+                SYSTEM_PROMPT,
+                bedrock_prompt,
+            ).strip()
+        except (RuntimeError, ValueError) as error:
+            print(f"Bedrock generation failed: {error}")
+            return {
+                "status": "error",
+                "reason": "Bedrock investigation generation failed.",
+                "incident_source": log["source"],
+            }
+
+    else:
+        request = urllib.request.Request(
+            "http://localhost:11434/api/chat",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+
+        try:
+            with urllib.request.urlopen(
+                request, timeout=180
+            ) as response:
+                result = json.loads(
+                    response.read().decode("utf-8")
+                )
+        except urllib.error.HTTPError as error:
+            print(f"Ollama HTTP error {error.code}:")
+            print(
+                error.read().decode(
+                    "utf-8", errors="replace"
+                )
+            )
+            return {
+                "status": "error",
+                "reason": "Ollama investigation generation failed.",
+                "incident_source": log["source"],
+            }
+        except (urllib.error.URLError, TimeoutError) as error:
+            print(f"Ollama request failed: {error}")
+            return {
+                "status": "error",
+                "reason": "Ollama investigation generation failed.",
+                "incident_source": log["source"],
+            }
+
+        answer = result.get(
+            "message", {}
+        ).get("content", "").strip()
+
+        if result.get("done_reason") == "length":
+            return {
+                "status": "error",
+                "reason": "Ollama response reached its output limit.",
+                "incident_source": log["source"],
+            }
 
     elapsed = time.perf_counter() - start
-    answer = result.get("message", {}).get("content", "").strip()
 
     if not answer:
-        print("Ollama returned an empty response.")
         return {
             "status": "error",
-            "reason": "Investigation generation failed; see diagnostic output.",
+            "reason": "Model returned an empty response.",
             "incident_source": log["source"],
         }
 
-    if result.get("done_reason") == "length":
-        message = "The response reached the output limit and may be incomplete."
-        print(message)
-        return {
-            "status": "error",
-            "reason": message,
-            "incident_source": log["source"],
-        }
 
     try:
-        structured_report = json.loads(answer)
+        # Remove Markdown code fences if Nova includes them.
+        cleaned_answer = answer.strip()
+
+        if cleaned_answer.startswith("```"):
+            cleaned_answer = re.sub(
+                r"^```(?:json)?\s*",
+                "",
+                cleaned_answer,
+                flags=re.IGNORECASE,
+            )
+
+            cleaned_answer = re.sub(
+                r"\s*```\s*$",
+                "",
+                cleaned_answer,
+            )
+
+        structured_report = json.loads(cleaned_answer)
 
         if (
             not isinstance(structured_report, dict)
@@ -539,21 +610,40 @@ def generate_investigation(
     }
 
 
+
 def main() -> None:
     parser = argparse.ArgumentParser()
+
     parser.add_argument("log_path")
-    parser.add_argument("--model", default="gemma3:4b")
+
+    parser.add_argument(
+        "--provider",
+        choices=["ollama", "bedrock"],
+        default="ollama",
+    )
+
+    parser.add_argument(
+        "--model",
+        default="gemma3:4b",
+    )
+
     parser.add_argument(
         "--retriever",
         choices=["keyword", "semantic"],
         default="keyword",
     )
+
     args = parser.parse_args()
 
     generate_investigation(
         log_path=args.log_path,
-        model=args.model,
+        model=(
+            "global.amazon.nova-2-lite-v1:0"
+            if args.provider == "bedrock"
+            else args.model
+        ),
         retriever=args.retriever,
+        provider=args.provider,
     )
 
 

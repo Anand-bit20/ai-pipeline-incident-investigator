@@ -12,7 +12,10 @@ def assess_release(
     release: dict,
     model: str = "gemma3:4b",
     retriever: str = "semantic",
+    provider: str = "ollama",
 ) -> dict:
+    if provider not in {"ollama", "bedrock"}:
+        raise ValueError("Provider must be ollama or bedrock.")
     readiness = evaluate_release(release)
     investigations = []
 
@@ -48,10 +51,11 @@ def assess_release(
                         )
 
                     outcome = generate_investigation(
-                        log_path=log_path,
-                        model=model,
-                        retriever=retriever,
-                    )
+                    log_path=log_path,
+                    model=model,
+                    retriever=retriever,
+                    provider=provider,
+                )
 
                     valid_statuses = {
                         "generated",
@@ -116,6 +120,13 @@ def main() -> None:
         choices=["keyword", "semantic"],
         default="semantic",
     )
+
+    parser.add_argument(
+        "--provider",
+        choices=["ollama", "bedrock"],
+        default="ollama",
+    )
+
     args = parser.parse_args()
 
     release_path = PROJECT_ROOT / args.release_path
@@ -123,10 +134,15 @@ def main() -> None:
     try:
         release = json.loads(release_path.read_text(encoding="utf-8"))
         assessment = assess_release(
-            release,
-            model=args.model,
-            retriever=args.retriever,
-        )
+        release,
+        model=(
+            "global.amazon.nova-2-lite-v1:0"
+            if args.provider == "bedrock"
+            else args.model
+        ),
+        retriever=args.retriever,
+        provider=args.provider,
+)
     except (OSError, ValueError) as error:
         parser.exit(1, f"Could not assess release: {error}\n")
 

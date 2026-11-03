@@ -74,16 +74,54 @@ except (OSError, ValueError) as error:
     st.error(f"Could not read release evidence: {error}")
     st.stop()
 
-# Separate results when the selected evidence changes.
-release_key = hashlib.sha256(
-    json.dumps(release, sort_keys=True).encode("utf-8")
-).hexdigest()
-
-if "releaseguard_results" not in st.session_state:
-    st.session_state["releaseguard_results"] = {}
 
 with st.expander("View release evidence"):
     st.json(release)
+
+st.subheader("AI configuration")
+
+provider_label = st.selectbox(
+    "Investigation provider",
+    ["Local Ollama", "Amazon Bedrock"],
+    help="Choose the AI platform used for incident investigations.",
+)
+
+provider = (
+    "bedrock"
+    if provider_label == "Amazon Bedrock"
+    else "ollama"
+)
+
+retriever = "semantic"
+
+if provider == "bedrock":
+    st.caption(
+        "Amazon Bedrock: Titan V2 semantic retrieval "
+        "+ Nova 2 Lite investigation. "
+        "AWS credentials and model access are required."
+    )
+else:
+    st.caption(
+        "Local Ollama: embeddinggemma semantic retrieval "
+        "+ Gemma 3 investigation."
+    )
+
+# Identify results by release evidence and AI configuration.
+release_key = hashlib.sha256(
+    json.dumps(
+        {
+            "release": release,
+            "provider": provider,
+            "retriever": retriever,
+        },
+        sort_keys=True,
+    ).encode("utf-8")
+).hexdigest()
+
+# Initialize Streamlit session state before accessing it.
+if "releaseguard_results" not in st.session_state:
+    st.session_state["releaseguard_results"] = {}
+
 
 left, right = st.columns(2)
 assess_clicked = left.button("Assess release", type="primary")
@@ -94,7 +132,29 @@ if assess_clicked:
 
     try:
         with st.spinner("Checking release rules and investigating incidents..."):
-            assessment = assess_release(release, retriever="semantic")
+
+            assessment = assess_release(
+                release,
+                retriever=retriever,
+                provider=provider,
+                model=(
+                    "global.amazon.nova-2-lite-v1:0"
+                    if provider == "bedrock"
+                    else "gemma3:4b"
+                ),
+            )
+
+            # Record how this assessment was generated.
+            assessment["ai_configuration"] = {
+                "provider": provider,
+                "retriever": retriever,
+                "model": (
+                    "global.amazon.nova-2-lite-v1:0"
+                    if provider == "bedrock"
+                    else "gemma3:4b"
+                ),
+            }
+
 
             ASSESSMENT_DIR.mkdir(parents=True, exist_ok=True)
             output_path = ASSESSMENT_DIR / (
@@ -129,10 +189,14 @@ if load_clicked:
             except (OSError, ValueError):
                 continue
 
+
             if (
                 isinstance(saved, dict)
                 and saved.get("release_evidence") == release
+                and saved.get("ai_configuration", {}).get("provider") == provider
+                and saved.get("ai_configuration", {}).get("retriever") == retriever
             ):
+
                 st.session_state["releaseguard_results"][release_key] = {
                     "assessment": saved,
                     "filename": path.name,
@@ -186,10 +250,21 @@ if current:
         st.write(f"Investigation status: {investigation['status']}")
 
         if investigation["status"] != "generated":
-            st.warning(
-                investigation.get("reason", "Investigation unavailable.")
+            st.error(
+                "AI investigation unavailable: "
+                + str(
+                    investigation.get(
+                        "reason",
+                        "The investigation could not be completed.",
+                    )
+                )
+            )
+            st.caption(
+                "Release readiness was evaluated independently. "
+                "Human review is still required."
             )
             continue
+
 
         record = investigation["record"]
         report = json.loads(record["report"])

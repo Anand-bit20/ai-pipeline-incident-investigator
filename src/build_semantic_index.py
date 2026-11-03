@@ -1,14 +1,39 @@
 import hashlib
 import json
 import time
+import argparse
+
+from bedrock_embeddings import (
+    EMBEDDING_MODEL as TITAN_MODEL,
+    embed_texts as titan_embed_texts,
+)
+from ollama_embeddings import (
+    EMBEDDING_MODEL as OLLAMA_MODEL,
+    embed_texts as ollama_embed_texts,
+)
 from datetime import datetime, timezone
 from pathlib import Path
 
 from load_evidence import PROJECT_ROOT
-from ollama_embeddings import EMBEDDING_MODEL, embed_texts
+
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--provider",
+        choices=["ollama", "bedrock"],
+        default="ollama",
+    )
+    args = parser.parse_args()
+
+    if args.provider == "bedrock":
+        embedding_model = TITAN_MODEL
+        embedding_function = titan_embed_texts
+    else:
+        embedding_model = OLLAMA_MODEL
+        embedding_function = ollama_embed_texts
+
     chunks_path = PROJECT_ROOT / "data" / "runbook_chunks.json"
 
     if not chunks_path.is_file():
@@ -43,17 +68,16 @@ def main() -> None:
         )
 
     print(
-        f"Embedding {len(chunks)} chunks with {EMBEDDING_MODEL}...",
+        f"Embedding {len(chunks)} chunks with {embedding_model}...",
         flush=True,
     )
-
     start = time.perf_counter()
     vectors = []
     batch_size = 8
 
     for offset in range(0, len(inputs), batch_size):
         batch = inputs[offset:offset + batch_size]
-        vectors.extend(embed_texts(batch))
+        vectors.extend(embedding_function(batch))
 
         print(
             f"Embedded {len(vectors)}/{len(chunks)} chunks",
@@ -67,7 +91,7 @@ def main() -> None:
 
     index = {
         "format_version": 1,
-        "model": EMBEDDING_MODEL,
+        "model": embedding_model,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "chunks_sha256": hashlib.sha256(chunks_bytes).hexdigest(),
         "dimensions": dimensions,
@@ -83,7 +107,13 @@ def main() -> None:
         ],
     }
 
-    output = PROJECT_ROOT / "data" / "semantic_index.json"
+    filename = (
+        "titan_semantic_index.json"
+        if args.provider == "bedrock"
+        else "semantic_index.json"
+    )
+
+    output = PROJECT_ROOT / "data" / filename
     temporary_output = output.with_suffix(".tmp")
 
     temporary_output.write_text(
