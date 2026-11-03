@@ -34,3 +34,7 @@ evaluation/release_assessments/
 .pytest_cache/
 .coverage
 *.tmp
+
+# Generated AWS Bedrock artifacts
+data/titan_semantic_index.json
+releaseguard-bedrock-test.zip
