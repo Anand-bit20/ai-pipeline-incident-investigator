@@ -1,260 +1,266 @@
-# AI-Powered Data Pipeline Incident Investigator & ReleaseGuard AI
+﻿# AI-Powered Data Pipeline Incident Investigator & ReleaseGuard AI
 
-An evidence-grounded AI application for investigating data pipeline failures and assessing software release readiness.
+An evidence-grounded prototype for investigating data pipeline failures and assessing software release readiness. It combines retrieval-augmented generation (RAG) with **deterministic release rules** and **human oversight**.
 
-Built using **Python, Streamlit, Ollama, Gemma 3, semantic retrieval, and rule-based release evaluation**.
+**AI options:** Local Ollama (Gemma 3 + embeddinggemma) or Amazon Bedrock (Nova 2 Lite + Titan Text Embeddings V2).
+**Interface:** Streamlit.
+**Scope:** Synthetic demonstration data; no automatic deployments.
 
-The application operates locally, generates cited investigation reports, and provides GO, NO-GO, or REVIEW release recommendations while retaining human oversight.
+## 1. Problem statement
 
-## 1. Problem Statement
+Before releasing software or data pipelines, engineers often need to review test results, validation failures, incident logs, and troubleshooting documentation. Manual review takes time and can make the reasoning behind a release recommendation difficult to trace.
 
-Data pipeline incidents can delay software releases and require engineers to manually inspect logs, identify failure patterns, consult troubleshooting documentation, and assess deployment risks.
+This project brings together two capabilities:
 
-Release decisions may also depend on incomplete test evidence, unresolved incidents, and inconsistent readiness checks.
+- **AI Incident Investigator:** Extracts observable facts from pipeline logs, retrieves relevant runbooks, and produces structured findings with evidence citations.
+- **ReleaseGuard AI:** Evaluates declared release checks and unresolved incidents, recommends **GO**, **NO-GO**, or **REVIEW**, and attaches incident investigations when needed.
 
-This project combines two capabilities:
+**A GO recommendation is not deployment approval.** The application records human review as pending and does not deploy software.
 
-- **AI Incident Investigator:** Analyzes pipeline logs and retrieves relevant troubleshooting evidence.
-- **ReleaseGuard AI:** Evaluates release readiness and incorporates incident investigations into a structured release assessment.
+## 2. Key features
 
-## 2. Core Features
+### Incident investigation
 
-### AI Incident Investigator
-
-- Structured extraction of facts from synthetic pipeline logs.
-- Keyword-based and semantic retrieval of troubleshooting runbooks.
-- Local AI generation using Ollama and `gemma3:4b`.
-- Semantic embeddings using `embeddinggemma`.
-- Evidence-grounded investigation reports with source citations.
-- Separation of observed failures from unconfirmed root causes.
-- Automatic report-structure and citation-label checks.
-- Saved investigation reports and manual review records.
-- Streamlit interface for incident investigation and review.
-- Evaluation scripts for retrieval quality.
+- Parses facts from synthetic pipeline logs, separating observed behavior from root-cause hypotheses.
+- Retrieves troubleshooting material using keyword matching or semantic similarity.
+- Supports two selectable AI providers:
+  - **Ollama:** `gemma3:4b` for generation; `embeddinggemma` for 768-dimensional vectors.
+  - **Amazon Bedrock:** `global.amazon.nova-2-lite-v1:0` for generation; `amazon.titan-embed-text-v2:0` for 1024-dimensional vectors.
+- Produces five report sections: observed failure, pipeline impact, root-cause status, troubleshooting, and additional evidence.
+- Enforces required report structure, allowed citation labels, and source-type restrictions.
+- Performs a **limited file-path support check**: when a generated finding includes a recognized quoted file path, at least one cited evidence passage must include that path.
+- Saves investigation and evaluation records and exposes evidence excerpts through Streamlit.
 
 ### ReleaseGuard AI
 
-- Rule-based release readiness assessment.
-- Three supported recommendations: GO, NO-GO, and REVIEW.
-- Validation of automated test evidence, data validation, and release checklists.
-- Identification of missing evidence and unresolved incidents.
-- AI incident investigation for referenced pipeline failures.
-- Combined release assessment and investigation reporting.
-- Saved assessment records.
-- Streamlit dashboard for evaluating synthetic releases.
-- Mandatory human review.
-- No automatic deployment execution.
+- Applies deterministic rules to declared automated-test, data-validation, and release-checklist results.
+- Handles unresolved incident references and invokes the chosen investigation provider when needed.
+- Preserves the rule-based readiness decision when an investigation fails, with the failure recorded for review.
+- Saves combined release assessments and allows provider-specific loading and JSON download in the dashboard.
+- Sets `human_review_status` to `pending` and `deployment_performed` to `false`.
 
-**Important:** GO indicates that declared evidence meets the prototype policy. It is not deployment authorization.
-
-## 3. System Architecture
+## 3. Architecture
 
 ```text
-                  PIPELINE INCIDENT LOGS
-                           |
-                           v
-                    Fact Extraction
-                           |
-                           v
-               Keyword / Semantic Retrieval
-                           |
-                           v
-               Troubleshooting Runbooks
-                           |
-                           v
-                  Ollama + Gemma 3
-                           |
-                           v
-                 Cited Investigation
-                           |
-                           v
-                    Saved AI Report
-                           |
-                           |
-RELEASE EVIDENCE ----------+
-        |
-        v
-Rule-Based Readiness Evaluation
-        |
-        v
- GO / NO-GO / REVIEW
-        |
-        v
-Combined Release Assessment
-        |
-        v
-Human Review Required
+Synthetic release JSON ----------------> Deterministic readiness rules
+    |                                      |
+    | unresolved incident                  | GO / NO-GO / REVIEW
+    v                                      |
+Incident log -> Fact extraction           |
+    |                                      |
+    v                                      |
+Runbook retrieval                          |
+  |-- Keyword retrieval                    |
+  |-- Ollama semantic index (768-d)         |
+  '-- Titan V2 semantic index (1024-d)      |
+    |                                      |
+    v                                      |
+AI explanation: Gemma 3 or Nova 2 Lite    |
+    |                                      |
+    v                                      |
+Structure + citation checks                |
+    |                                      |
+    +------------> Combined assessment <---+
+                         |
+                         v
+                 Streamlit dashboard
+                         |
+                         v
+            Human review pending / no deploy
 ```
 
-Release recommendations are determined by explicit rules. AI-generated investigations provide supporting information but cannot override these recommendations.
+The model **does not determine or override** the release recommendation. Both provider-specific semantic indexes are saved separately so their vector dimensions are not mixed.
 
-## 4. Technology Stack
+## 4. Technology stack
 
-| Technology | Purpose |
+| Component | Technology |
 |---|---|
-| Python 3.10 | Application logic |
-| Streamlit | User interface |
-| Ollama | Local model runtime |
-| Gemma 3 4B | Investigation generation |
-| EmbeddingGemma | Semantic embeddings |
-| JSON | Evidence and report storage |
-| Git / GitHub | Version control |
+| Application and rules | Python (developed locally with Python 3.10) |
+| Dashboard | Streamlit |
+| Local generation | Ollama + Gemma 3 4B |
+| Local embeddings | embeddinggemma (768 dimensions) |
+| Cloud generation | Amazon Bedrock + Nova 2 Lite |
+| Cloud embeddings | Amazon Titan Text Embeddings V2 (1024 dimensions) |
+| Cloud SDK/authentication | Boto3, Botocore, AWS CRT, AWS CLI |
+| Retrieval and records | Python, JSON, cosine similarity, runbook chunks |
+| Version control | Git / GitHub |
 
-The semantic index stores embeddings for troubleshooting documentation and supports similarity-based evidence retrieval.
+## 5. Setup
 
-## 5. Installation and Setup
+### 5.1 Prerequisites
 
-### Requirements
+- Python 3.10 or a compatible Python version.
+- Access to the repository and its **synthetic** sample logs, runbooks, and releases.
+- For the local option: Ollama running with the required models.
+- For the Bedrock option: authorized AWS account access, Bedrock permissions, and network/certificate configuration compliant with your organization.
 
-- Python 3.10 (developed using 3.10.11)
-- Ollama installed and running locally
-- Sufficient system resources for local AI models
-
-### Install Python dependencies
+Install Python packages:
 
 ```powershell
 python -m pip install -r requirements.txt
 ```
 
-### Download the AI models
+For the Bedrock option, ensure the following additional packages are installed in the **same Python environment** used to run Streamlit:
+
+```powershell
+python -m pip install --upgrade "boto3[crt]"
+```
+
+> Check `requirements.txt` before relying on it for a complete reproducible install; the project's dependencies should be pinned and reviewed separately. Never commit cloud credentials.
+
+### 5.2 Prepare runbook chunks
+
+From the repository root in Windows PowerShell:
+
+```powershell
+python .\src\chunk_runbooks.py
+```
+
+### 5.3 Option A â€” Local Ollama
+
+Install and start Ollama, then download the models:
 
 ```powershell
 ollama pull gemma3:4b
 ollama pull embeddinggemma
 ```
 
-If Ollama is not available in PowerShell:
+Build the local semantic index:
 
 ```powershell
-& "$env:LOCALAPPDATA\Programs\Ollama\ollama.exe" pull gemma3:4b
-& "$env:LOCALAPPDATA\Programs\Ollama\ollama.exe" pull embeddinggemma
+python .\src\build_semantic_index.py --provider ollama
 ```
 
-Keep Ollama running.
+This writes `data/semantic_index.json`.
 
-### Prepare troubleshooting documentation
+### 5.4 Option B â€” Amazon Bedrock
+
+Sign in using an **organization-approved** AWS authentication method. For AWS CLI versions that support IAM console login:
 
 ```powershell
-python .\src\chunk_runbooks.py
+aws login --region ap-south-1
+aws sts get-caller-identity --region ap-south-1
 ```
 
-### Build the semantic index
+If applicable, verify access to the configured Nova inference profile:
 
 ```powershell
-python .\src\build_semantic_index.py
+aws bedrock get-inference-profile `
+  --inference-profile-identifier global.amazon.nova-2-lite-v1:0 `
+  --region ap-south-1 `
+  --query "status"
 ```
 
-### Launch the application
+Build the Bedrock semantic index:
+
+```powershell
+python .\src\build_semantic_index.py --provider bedrock
+```
+
+This writes `data/titan_semantic_index.json` with 1024-dimensional vectors. Index creation and subsequent inference **make billable Bedrock requests**. Use only approved/synthetic evidence. The configured Nova model uses a global inference profile; check organizational data-residency requirements before using any real data.
+
+If `aws login` works in AWS CLI but Boto3 reports a missing login-provider dependency, install `boto3[crt]` in the Python environment executing the application. Certificate-validation issues should be fixed using approved CA trust settings, **not** by disabling TLS verification.
+
+### 5.5 Run the Streamlit dashboard
 
 ```powershell
 python -m streamlit run .\app.py --server.address 127.0.0.1
 ```
 
-Open:
-
-http://localhost:8501
-
-Use the incident investigator or navigate to the ReleaseGuard AI page.
-
-## 6. Incident Investigation
-
-The application supports synthetic incident scenarios involving:
-
-- Missing required schema columns.
-- API request timeouts.
-- Unknown errors and insufficient evidence.
-- Azure Blob authorization failures.
-
-The investigation process combines extracted facts with retrieved documentation.
-
-Generated findings distinguish recorded pipeline behavior from troubleshooting hypotheses and requests for additional evidence.
-
-## 7. ReleaseGuard AI Demo Scenarios
-
-| Release | Scenario | Expected recommendation |
-|---|---|---|
-| REL-001 | Failed data validation and unresolved incident | NO-GO |
-| REL-002 | All required checks passed with declared evidence | GO |
-| REL-003 | Missing required automated test evidence | REVIEW |
-
-### Run individual release checks
+Open `http://localhost:8501` and navigate to the **ReleaseGuard AI** page, or launch it directly:
 
 ```powershell
-python .\src\evaluate_release.py data\sample_releases\release_001_blocked.json
-python .\src\evaluate_release.py data\sample_releases\release_002_ready.json
-python .\src\evaluate_release.py data\sample_releases\release_003_review.json
+python -m streamlit run .\pages\1_ReleaseGuard.py --server.address 127.0.0.1
 ```
 
-### Run combined release assessment and AI investigation
+Select a sample release and the **Local Ollama** or **Amazon Bedrock** investigation provider. Click **Assess release** to save a new assessment, or **Open latest saved assessment** to inspect an existing matching assessment without making a new model call.
+
+## 6. Command-line examples
+
+Run an incident investigation with Bedrock RAG:
 
 ```powershell
-python .\src\assess_release.py data\sample_releases\release_001_blocked.json
+python .\src\generate_investigation.py `
+  .\data\sample_logs\incident_001_missing_trip_id.log `
+  --provider bedrock `
+  --retriever semantic
 ```
 
-The combined assessment saves the release recommendation, investigation results, and human review status.
+Run the combined release assessment:
 
-## 8. Evaluation and Testing
+```powershell
+python .\src\assess_release.py `
+  .\data\sample_releases\release_001_blocked.json `
+  --provider bedrock `
+  --retriever semantic
+```
 
-The prototype has been tested against three synthetic release scenarios:
+For local Ollama, use `--provider ollama` after building its semantic index. The default provider is Ollama.
 
-- REL-001: NO-GO correctly returned.
-- REL-002: GO correctly returned.
-- REL-003: REVIEW correctly returned.
+## 7. Demonstration scenarios and observed tests
 
-An integration test for REL-001 successfully generated an incident investigation with 100% citation-label validity and no invalid citation labels.
+| Release | Synthetic evidence scenario | Expected | Observed |
+|---|---|---|---|
+| REL-001 | Failed data validation (`trip_id` missing), unresolved INC-001 | NO-GO | NO-GO; investigation generated in successful tests |
+| REL-002 | All required declared checks passed | GO | GO; no investigation requested |
+| REL-003 | Automated-test evidence missing or invalid | REVIEW | REVIEW; no investigation requested |
 
-A separate failure-handling test confirmed that an investigation failure does not override a NO-GO recommendation, that errors are recorded, and that human review remains pending.
+The three release outcomes were verified in the **local Streamlit dashboard with Ollama and with Amazon Bedrock**, and the Bedrock assessments were checked to confirm:
 
-Retrieval evaluation utilities are included to assess keyword and semantic retrieval.
+- Human review remains `pending` for all three releases.
+- `deployment_performed` is `false` for all three releases.
+- REL-001 supports an AI-generated investigation with cited evidence.
 
-These tests demonstrate the expected behavior for selected synthetic cases. They do not establish production reliability or generalized model accuracy.
+A simulated Bedrock failure was also tested: **REL-001 remained NO-GO**, the investigation was recorded as an error, review stayed pending, and no deployment occurred.
 
-Citation-label validity confirms citation formatting and referencing, not necessarily the factual support of every claim.
+Individual successful investigation runs reported **100% citation-label validity**. A separate regression test showed that a generated finding with a specific file path and no supporting citation was rejected, while a supported citation was accepted. A subsequent full Bedrock investigation and combined REL-001 assessment passed the updated safeguard.
 
-## 9. Project Structure
+These results concern **selected synthetic cases and individual test runs**, not production reliability or a statistically established model-accuracy rate.
 
-| Location | Purpose |
+## 8. Project layout
+
+| Path | Purpose |
 |---|---|
 | `app.py` | Main Streamlit application |
-| `pages/` | ReleaseGuard dashboard |
-| `src/` | Investigation, retrieval, release assessment, and evaluation |
+| `pages/1_ReleaseGuard.py` | ReleaseGuard dashboard |
+| `src/assess_release.py` | Combines readiness rules and incident investigation |
+| `src/evaluate_release.py` | Deterministic release evaluation |
+| `src/generate_investigation.py` | Structured generation and validation |
+| `src/bedrock_llm.py` | Bedrock model generation client |
+| `src/bedrock_embeddings.py` | Titan V2 embeddings client |
+| `src/build_semantic_index.py` | Builds provider-specific runbook index |
+| `src/retrieve_semantic.py` | Embedding retrieval and similarity ranking |
 | `data/sample_logs/` | Synthetic incident logs |
-| `data/sample_releases/` | Synthetic release evidence |
-| `knowledge_base/runbooks/` | Troubleshooting documentation |
-| `evaluation/cases/` | Evaluation scenarios |
-| `evaluation/reports/` | Locally generated investigation reports |
-| `evaluation/reviews/` | Locally generated manual reviews |
-| `evaluation/release_assessments/` | Locally generated combined assessments |
+| `data/sample_releases/` | Synthetic release inputs |
+| `data/runbook_chunks.json` | Chunked runbook data |
+| `data/semantic_index.json` | Ollama semantic index |
+| `data/titan_semantic_index.json` | Generated Bedrock semantic index (ignored by Git) |
+| `knowledge_base/runbooks/` | Project-authored troubleshooting documentation |
+| `evaluation/reports/` | Saved investigation and evaluation reports |
+| `evaluation/release_assessments/` | Saved combined assessments |
 
-Generated investigation reports, review records, assessment results, and the semantic index are excluded from Git tracking.
+Do not commit credentials, generated data containing sensitive information, or temporary transfer archives.
 
-## 10. Safety and Limitations
+## 9. Safety and limitations
 
-- This is a local demonstration prototype, not a production release governance system.
-- Release readiness is evaluated from declared evidence, which is not independently verified.
-- All sample release and incident data are synthetic.
-- Human approval is always required.
-- The application does not deploy or automatically repair pipelines.
-- AI investigation outputs may be inaccurate and require evidence review.
-- The supported log formats and evaluation scenarios remain limited.
-- Citation-label validity does not guarantee claim correctness.
-- Local model execution requires Ollama and compatible hardware.
-- Investigation-time savings and production performance have not been established.
+- **Synthetic inputs:** The test logs, release records, and runbooks are demonstration data.
+- **Declared evidence:** Check statuses are provided by input JSON; the prototype does not independently verify CI/CD systems or test artifacts.
+- **No authorization or deployment:** GO is an advisory recommendation. Human review remains pending; no deployment is executed.
+- **Evidence support is partial:** Citation-label validation verifies that references exist and satisfy source-type restrictions. The additional file-path check only covers certain explicitly quoted file paths. Neither test establishes the semantic correctness of all claims.
+- **Generation variability:** Even with a fixed low temperature, generated findings and citations can vary. Invalid evidence support can cause an investigation to fail safely and require review.
+- **Limited evaluation:** The tested synthetic incidents are not representative of all production failures, and time savings have not been measured.
+- **Bedrock security/cost:** Cloud access requires authorized credentials and permissions. Requests are billable, and cross-region inference/profile behavior must comply with organizational policy.
+- **Prototype scope:** This is not a production governance, approval, or automatic remediation system.
 
-## 11. Future Improvements
+## 10. Future improvements
 
-- Integrate CI/CD platforms and automated test systems.
-- Verify readiness evidence directly from trusted source systems.
-- Support additional log formats and data validation artifacts.
-- Expand incident and release evaluation datasets.
-- Add formal automated regression tests.
-- Introduce role-based human approval workflows.
-- Measure investigation accuracy, latency, and operational efficiency.
+- Connect CI/CD pipelines and test-artifact systems to verify readiness evidence directly.
+- Introduce authenticated, role-based human approval workflows and audit trails.
+- Expand incident logs, runbooks, and release scenarios.
+- Add repeatable evaluation sets for retrieval, citation support, and model output quality.
+- Measure latency, model cost, reliability, and engineer review time.
+- Package and deploy privately within an approved environment.
 
-## 12. Project Purpose
+## 11. Project status
 
-This project demonstrates the integration of data engineering, retrieval-augmented generation, local large language models, deterministic decision rules, and human-in-the-loop review.
-
-The goal is to support faster, more transparent incident investigation and release readiness assessment without replacing engineering judgment or deployment controls.
-
-**Project status:** Functional local prototype validated against selected synthetic scenarios.
+**Functional demonstration prototype:** Both local Ollama and Amazon Bedrock workflows have been tested through the Streamlit interface. Three synthetic release decisions and a simulated AI-failure safeguard passed. Production readiness and broader performance have **not** been established.
