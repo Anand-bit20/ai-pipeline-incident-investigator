@@ -57,8 +57,54 @@ available diagnostic instruction.
 Write concise findings. Check that each statement is supported by
 its citations before returning the response.
 
+When a finding mentions a specific file path or filename:
+- Cite the exact incident-log line that contains that path.
+- If also recommending an action, cite the relevant runbook passage.
+- Do not cite only a generic runbook passage for a file-specific claim.
+- If the exact path cannot be supported by cited evidence,
+  describe the required evidence generically instead.
 
 """
+
+
+def validate_file_path_support(
+    report: dict,
+    evidence_by_citation: dict[str, str],
+) -> None:
+    # Check explicitly quoted file paths in generated findings.
+    path_pattern = re.compile(
+        r"""[`'"]((?:[\w.-]+[/\\])+[\w.-]+\.(?:csv|json|parquet|geojson|txt|log))[`'"]""",
+        flags=re.IGNORECASE,
+    )
+
+    generated_sections = {
+        "root_cause_status",
+        "troubleshooting",
+        "additional_evidence",
+    }
+
+    for section in generated_sections:
+        for finding in report.get(section, []):
+            statement = finding["statement"]
+            citations = finding["citations"]
+
+            mentioned_paths = path_pattern.findall(statement)
+
+            for mentioned_path in mentioned_paths:
+                normalized_path = mentioned_path.replace("\\", "/").lower()
+
+                supported = any(
+                    normalized_path in evidence_by_citation.get(
+                        citation, ""
+                    ).replace("\\", "/").lower()
+                    for citation in citations
+                )
+
+                if not supported:
+                    raise ValueError(
+                        f"Unsupported file path in {section}: "
+                        f"{mentioned_path}"
+                    )
 
 
 def validate_final_report(
@@ -242,6 +288,15 @@ def generate_investigation(
         f"{p['source']}:L{p['start_line']}-L{p['end_line']}"
         for p in passages
     )
+    evidence_by_citation = {
+        f"{log['source']}:L{line['line_number']}": line["text"]
+        for line in log["lines"]
+    }
+
+    evidence_by_citation.update({
+        f"{p['source']}:L{p['start_line']}-L{p['end_line']}": p["text"]
+        for p in passages
+    })
 
     required_sections = [
         "observed_failure",
@@ -511,6 +566,10 @@ def generate_investigation(
             log_citations,
             root_cause_labels,
         )
+        validate_file_path_support(
+        structured_report,
+        evidence_by_citation,
+    )
     except ValueError as error:
         print(f"Final report validation failed: {error}")
         return {
